@@ -116,32 +116,23 @@
             android:layout_height="1dp"
             android:layout_weight="1" />
 
-        <!-- Live GPS Status Pill -->
-        <LinearLayout
-            android:id="@+id/gps_status_pill"
-            android:layout_width="wrap_content"
-            android:layout_height="32dp"
-            android:background="@drawable/bg_gps_pill"
-            android:gravity="center_vertical"
-            android:paddingStart="12dp"
-            android:paddingEnd="14dp">
+        <!-- Settings Button -->
+        <FrameLayout
+            android:id="@+id/settings_button_main"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="@drawable/bg_circle_glass"
+            android:clickable="true"
+            android:focusable="true">
 
             <ImageView
-                android:id="@+id/gps_status_dot"
-                android:layout_width="8dp"
-                android:layout_height="8dp"
-                android:src="@drawable/ic_gps_dot" />
-
-            <TextView
-                android:id="@+id/gps_status_tv"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="7dp"
-                android:text="GPS Active"
-                android:textColor="#FFFFFF"
-                android:textSize="11sp"
-                android:textStyle="bold" />
-        </LinearLayout>
+                android:id="@+id/settings_icon_main_activity"
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:layout_gravity="center"
+                android:src="@drawable/settings_icon_main_activity"
+                app:tint="@color/white" />
+        </FrameLayout>
 
         <!-- Spacer -->
         <View

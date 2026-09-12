@@ -150,8 +150,9 @@ class MainActivity : AppCompatActivity(), FoldersActivity.FolderClickListener {
     private var locationCallback: LocationCallback? = null
     private var isResolvingLocation = false
     private var hasPromptedLocationOnResume = false
-    private lateinit var gpsStatusTv: TextView
-    private lateinit var gpsStatusDot: ImageView
+    private var gpsStatusTv: TextView? = null
+    private var gpsStatusDot: ImageView? = null
+    private lateinit var settingsButton: View
 
 
     @RequiresApi(Build.VERSION_CODES.Q)
@@ -236,16 +237,10 @@ class MainActivity : AppCompatActivity(), FoldersActivity.FolderClickListener {
         accuracyIcon = findViewById(R.id.accuracy_icon_main)
         locationDetailsCard = findViewById(R.id.location_details_card_view)
         locationDetailsCard.setCardBackgroundColor(Color.TRANSPARENT)
-        gpsStatusTv = findViewById(R.id.gps_status_tv)
-        gpsStatusDot = findViewById(R.id.gps_status_dot)
-
-        findViewById<View>(R.id.gps_status_pill)?.setOnClickListener {
-            if (!isLocationServiceEnabled()) {
-                promptEnableLocation()
-            } else {
-                startLocationUpdates()
-                Toast.makeText(this, "Acquiring highest precision GPS fix...", Toast.LENGTH_SHORT).show()
-            }
+        settingsButton = findViewById<View>(R.id.settings_button_main)
+        settingsButton.setOnClickListener {
+            // Setting button placeholder - will be configured later
+            Toast.makeText(this, "Settings", Toast.LENGTH_SHORT).show()
         }
 
         sharedPreferences = getSharedPreferences(PREF_NAME_MANUAL, Context.MODE_PRIVATE)
@@ -993,10 +988,10 @@ class MainActivity : AppCompatActivity(), FoldersActivity.FolderClickListener {
     private fun checkLocationSettingsAndStart() {
         if (!hasLocationPermission()) return
         if (isLocationServiceEnabled()) {
-            if (::gpsStatusTv.isInitialized) gpsStatusTv.text = "Acquiring GPS..."
+            gpsStatusTv?.text = "Acquiring GPS..."
             startLocationUpdates()
         } else {
-            if (::gpsStatusTv.isInitialized) gpsStatusTv.text = "Location Off"
+            gpsStatusTv?.text = "Location Off"
             cityCountryTv.text = "Location is off. Tap to enable."
             longLatTv.text = "GPS coordinates unavailable"
             promptEnableLocation()
@@ -1059,11 +1054,11 @@ class MainActivity : AppCompatActivity(), FoldersActivity.FolderClickListener {
         if (requestCode == REQUEST_CHECK_SETTINGS) {
             isResolvingLocation = false
             if (resultCode == Activity.RESULT_OK) {
-                if (::gpsStatusTv.isInitialized) gpsStatusTv.text = "Acquiring GPS..."
+                gpsStatusTv?.text = "Acquiring GPS..."
                 Toast.makeText(this, "Location enabled. Acquiring GPS...", Toast.LENGTH_SHORT).show()
                 startLocationUpdates()
             } else {
-                if (::gpsStatusTv.isInitialized) gpsStatusTv.text = "Location Off"
+                gpsStatusTv?.text = "Location Off"
                 Toast.makeText(this, "Location is disabled. Tap location card to enable.", Toast.LENGTH_LONG).show()
                 cityCountryTv.text = "Location is off. Tap to enable."
                 longLatTv.text = "GPS coordinates unavailable"
@@ -1190,15 +1185,11 @@ class MainActivity : AppCompatActivity(), FoldersActivity.FolderClickListener {
             accuracyTextView.text = "±${String.format(Locale.US, "%.1f", location.accuracy)} m"
             accuracyTextView.visibility = View.VISIBLE
             accuracyIcon.visibility = View.VISIBLE
-            if (::gpsStatusTv.isInitialized) {
-                gpsStatusTv.text = "GPS Active ±${location.accuracy.toInt()}m"
-            }
+            gpsStatusTv?.text = "GPS Active ±${location.accuracy.toInt()}m"
         } else {
             accuracyTextView.visibility = View.GONE
             accuracyIcon.visibility = View.GONE
-            if (::gpsStatusTv.isInitialized) {
-                gpsStatusTv.text = "GPS Active"
-            }
+            gpsStatusTv?.text = "GPS Active"
         }
 
         // Hide unused placeholders so they never display "Lat/Long" dummy text
