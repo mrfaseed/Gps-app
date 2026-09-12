@@ -2,7 +2,8 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_bottom_sheet_dark"
     android:orientation="vertical"
     android:padding="16dp">
 
@@ -10,34 +11,33 @@
         android:id="@+id/bottom_sheet_top_line"
         android:layout_width="@dimen/_40sdp"
         android:layout_height="@dimen/_2sdp"
-        android:background="@color/dark_grey"
+        android:background="#555555"
         android:layout_gravity="center" />
 
     <TextView
         android:id="@+id/plus_code_tv_bottom_sheet"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textColor="@color/black"
+        android:textColor="@color/white"
         android:textSize="@dimen/_12ssp"
         android:textStyle="bold"
         android:layout_marginTop="@dimen/_20sdp"
         android:layout_gravity="center"
-        android:text= "Plus Code"
+        android:text="Plus Code"
         tools:ignore="HardcodedText" />
 
     <View
         android:id="@+id/line_below_map_type_tv"
         android:layout_width="match_parent"
         android:layout_height="@dimen/_1sdp"
-        android:background="@color/grey"
-        android:layout_marginTop="@dimen/_15sdp"
-        />
+        android:background="#333333"
+        android:layout_marginTop="@dimen/_15sdp" />
 
     <TextView
         android:id="@+id/accurate_tv_bottom_sheet"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textColor="@color/black"
+        android:textColor="@color/white"
         android:textStyle="bold"
         android:textSize="@dimen/_12ssp"
         android:text="Accurate"
@@ -61,7 +61,7 @@
         android:id="@+id/concise_tv_bottom_sheet"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textColor="@color/black"
+        android:textColor="@color/white"
         android:textStyle="bold"
         android:textSize="@dimen/_12ssp"
         android:text="Concise(Recommended)"
@@ -78,9 +78,8 @@
         android:textSize="@dimen/_10ssp"
         android:layout_marginTop="@dimen/_5sdp"
         android:layout_marginStart="@dimen/_30sdp"
+        android:layout_marginBottom="@dimen/_20sdp"
         android:text="G485+HR"
         tools:ignore="HardcodedText" />
-
-
 
 </LinearLayout>

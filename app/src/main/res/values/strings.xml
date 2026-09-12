@@ -46,7 +46,7 @@
     <string name="hybrid">Hybrid</string>
     <string name="the_data_has_been_manually_set_if_you_want_you_can_select_the_automatic_fetched_current_location_from_the_above_drop_down_menu">The data has been manually set. If you want you can select the automatic fetched current location from the above drop down menu.</string>
     <string name="template_1">Template</string>
-    <string name="captured_by_gps_map_camera_app">Captured by : GPS Map Camera App</string>
+    <string name="captured_by_gps_map_camera_app">Built by : Simatrix GPS Camera</string>
     <string name="map_type_1">Map Type</string>
     <string name="short_address">Short Address</string>
     <string name="automatic_4">Automatic</string>
@@ -57,7 +57,7 @@
     <string name="time_zone">Time Zone</string>
     <string name="numbering">Numbering</string>
     <string name="note_hashtag">Note/Hashtag</string>
-    <string name="note_captured_by_gps_map_camera_app">Note : Captured by GPS Map Camera App</string>
+    <string name="note_captured_by_gps_map_camera_app">Note : Built by Simatrix GPS Camera</string>
     <string name="weather">Weather</string>
     <string name="wind">Wind</string>
     <string name="humidity">Humidity</string>

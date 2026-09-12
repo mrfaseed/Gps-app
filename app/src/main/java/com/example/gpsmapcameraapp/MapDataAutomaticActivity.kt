@@ -23,6 +23,7 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
+import com.google.android.gms.location.Priority
 import java.util.Locale
 
 class MapDataAutomaticActivity : AppCompatActivity() {
@@ -98,30 +99,22 @@ class MapDataAutomaticActivity : AppCompatActivity() {
         }
         fusedLocationClient.lastLocation
             .addOnSuccessListener { location: Location? ->
-                location?.let {
-                    // Get city, province, and country from the location
-                    val address = getAddress(location.latitude, location.longitude)
-                    val city = address.locality
-                    val province = address.adminArea // Province
-                    val country = address.countryName
-                    // Update the TextViews with the location information
-                    findViewById<TextView>(R.id.city_province_country_tv).text =
-                        "$city, $province, $country"
-                    findViewById<TextView>(R.id.city_tv).text = city
-                    findViewById<TextView>(R.id.province_country_tv).text = "$province, $country"
-                    // Update the TextViews with latitude and longitude
-                    latitudeValueTv.text = " ${location.latitude}"
-                    longitudeValueTv.text = "${location.longitude}"
-                }
-                val mapFragment =
-                    supportFragmentManager.findFragmentById(R.id.map_fragment_data_automatic) as SupportMapFragment
-                mapFragment.getMapAsync { googleMap ->
-                    // Add a marker at the current location and move the camera
-                    val latLng = location?.let { LatLng(it.latitude, location.longitude) }
-                    latLng?.let { MarkerOptions().position(it).title("Marker") }
-                        ?.let { googleMap.addMarker(it) }
-                    latLng?.let { CameraUpdateFactory.newLatLngZoom(it, 15f) }
-                        ?.let { googleMap.moveCamera(it) }
+                if (location != null) {
+                    updateUiWithLocation(location)
+                } else {
+                    if (ActivityCompat.checkSelfPermission(
+                            this,
+                            Manifest.permission.ACCESS_FINE_LOCATION
+                        ) == PackageManager.PERMISSION_GRANTED || ActivityCompat.checkSelfPermission(
+                            this,
+                            Manifest.permission.ACCESS_COARSE_LOCATION
+                        ) == PackageManager.PERMISSION_GRANTED
+                    ) {
+                        fusedLocationClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, null)
+                            .addOnSuccessListener { freshLocation: Location? ->
+                                freshLocation?.let { updateUiWithLocation(it) }
+                            }
+                    }
                 }
             }
         val mapFragment =
@@ -131,10 +124,40 @@ class MapDataAutomaticActivity : AppCompatActivity() {
         }
     }
 
-    private fun getAddress(latitude: Double, longitude: Double): Address {
-        val geocoder = Geocoder(this, Locale.getDefault())
-        val addresses: List<Address> = geocoder.getFromLocation(latitude, longitude, 1)!!
-        return addresses[0]
+    private fun updateUiWithLocation(location: Location) {
+        val address = getAddress(location.latitude, location.longitude)
+        val city = address?.locality ?: ""
+        val province = address?.adminArea ?: ""
+        val country = address?.countryName ?: ""
+        val fullAddress = if (address != null && address.maxAddressLineIndex >= 0 && !address.getAddressLine(0).isNullOrBlank()) {
+            address.getAddressLine(0)
+        } else {
+            listOf(city, province, country).filter { it.isNotBlank() }.joinToString(", ")
+        }
+        findViewById<TextView>(R.id.city_province_country_tv).text = fullAddress
+        findViewById<TextView>(R.id.city_tv).text = city
+        findViewById<TextView>(R.id.province_country_tv).text = listOf(province, country).filter { it.isNotBlank() }.joinToString(", ")
+        latitudeValueTv.text = " ${location.latitude}"
+        longitudeValueTv.text = "${location.longitude}"
+
+        val mapFragment =
+            supportFragmentManager.findFragmentById(R.id.map_fragment_data_automatic) as SupportMapFragment
+        mapFragment.getMapAsync { googleMap ->
+            val latLng = LatLng(location.latitude, location.longitude)
+            googleMap.clear()
+            googleMap.addMarker(MarkerOptions().position(latLng).title("Marker"))
+            googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15f))
+        }
+    }
+
+    private fun getAddress(latitude: Double, longitude: Double): Address? {
+        return try {
+            val geocoder = Geocoder(this, Locale.getDefault())
+            val addresses: List<Address>? = geocoder.getFromLocation(latitude, longitude, 1)
+            if (!addresses.isNullOrEmpty()) addresses[0] else null
+        } catch (e: Exception) {
+            null
+        }
     }
 
     private fun disableViews() {
@@ -212,11 +235,16 @@ class MapDataAutomaticActivity : AppCompatActivity() {
                     fusedLocationClient.lastLocation.addOnSuccessListener { location: Location? ->
                         location?.let {
                             val address = getAddress(location.latitude, location.longitude)
-                            val city = address.locality
-                            val province = address.adminArea
-                            val country = address.countryName
+                            val city = address?.locality ?: ""
+                            val province = address?.adminArea ?: ""
+                            val country = address?.countryName ?: ""
+                            val locationDetails = if (address != null && address.maxAddressLineIndex >= 0 && !address.getAddressLine(0).isNullOrBlank()) {
+                                address.getAddressLine(0)
+                            } else {
+                                listOf(city, province, country).filter { it.isNotBlank() }.joinToString(", ")
+                            }
 
-                            intent.putExtra("location_details", "$city, $province, $country")
+                            intent.putExtra("location_details", locationDetails)
                             intent.putExtra("latitude", location.latitude)
                             intent.putExtra("longitude", location.longitude)
                             startActivity(intent)

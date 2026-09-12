@@ -69,8 +69,6 @@ class FoldersActivity : AppCompatActivity() {
 
         backIcon = findViewById(R.id.back_icon_1)
         backIcon.setOnClickListener {
-            val intent = Intent(this, MainActivity::class.java)
-            startActivity(intent)
             finish()
         }
     }

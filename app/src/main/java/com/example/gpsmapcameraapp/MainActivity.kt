@@ -61,6 +61,21 @@ import java.io.File
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.Date
+import android.app.Activity
+import android.content.IntentSender
+import android.location.LocationManager
+import android.os.Looper
+import android.provider.Settings
+import androidx.appcompat.app.AlertDialog
+import com.google.android.gms.common.api.ResolvableApiException
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationResult
+import com.google.android.gms.location.LocationSettingsRequest
+import com.google.android.gms.location.LocationSettingsResponse
+import com.google.android.gms.location.Priority
+import com.google.android.gms.location.SettingsClient
+import com.google.android.gms.tasks.Task
 import java.util.Locale
 
 class MainActivity : AppCompatActivity(), FoldersActivity.FolderClickListener {
@@ -129,6 +144,9 @@ class MainActivity : AppCompatActivity(), FoldersActivity.FolderClickListener {
     private lateinit var accuracyIcon : ImageView
     private lateinit var sharedPreferencesAccuracySelection: SharedPreferences
     private lateinit var locationDetailsCard : CardView
+    private var locationCallback: LocationCallback? = null
+    private var isResolvingLocation = false
+    private var hasPromptedLocationOnResume = false
 
 
     @RequiresApi(Build.VERSION_CODES.Q)
@@ -224,7 +242,7 @@ class MainActivity : AppCompatActivity(), FoldersActivity.FolderClickListener {
                         SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date())
                     val currentDay = SimpleDateFormat("EEEE", Locale.getDefault()).format(Date())
                     val currentTime =
-                        SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
+                        SimpleDateFormat("hh:mm:ss a", Locale.getDefault()).format(Date())
 
                     findViewById<TextView>(R.id.date_day_time_tv).text =
                         "$currentDate, $currentDay, $currentTime"
@@ -240,21 +258,18 @@ class MainActivity : AppCompatActivity(), FoldersActivity.FolderClickListener {
                         ?.let { googleMap.moveCamera(it) }
                 }
             }
-        } else {
-            displayCurrentLocation()
         }
 
-        mapDataIcon.setOnClickListener {
+        val openMapData = View.OnClickListener {
             val intent = Intent(this, MapDataAutomaticActivity::class.java)
             startActivity(intent)
-            finish()
         }
+        mapDataIcon.setOnClickListener(openMapData)
+        findViewById<TextView>(R.id.map_data_tv).setOnClickListener(openMapData)
 
         sharedPreferences = getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
 
-
         viewModel = ViewModelProvider(this)[ImageSavingViewModel::class.java]
-
 
         restoreEffectState("autoEffectIcon")
         restoreEffectState("manualEffectIcon")
@@ -266,13 +281,19 @@ class MainActivity : AppCompatActivity(), FoldersActivity.FolderClickListener {
         restoreEffectState("twiiLightEffectIcon")
         restoreEffectState("shadeEffectIcon")
 
-        foldersIcon.setOnClickListener {
+        val openFolders = View.OnClickListener {
             val intent = Intent(this, FoldersActivity::class.java)
-            val foldersActivity = FoldersActivity()
-            foldersActivity.setFolderClickListener(this)
             startActivity(intent)
-            finish()
         }
+        foldersIcon.setOnClickListener(openFolders)
+        folderTv.setOnClickListener(openFolders)
+
+        val openTemplate = View.OnClickListener {
+            val intent = Intent(this, TemplateActivity::class.java)
+            startActivity(intent)
+        }
+        templateIcon.setOnClickListener(openTemplate)
+        findViewById<TextView>(R.id.template_tv).setOnClickListener(openTemplate)
 
 
         whiteBalanceIcon.setOnClickListener {
@@ -546,10 +567,32 @@ class MainActivity : AppCompatActivity(), FoldersActivity.FolderClickListener {
 
         val capturedByTv = findViewById<TextView>(R.id.captured_by_tv)
         // Set the text
-        capturedByTv.text = "Captured by : GPS Map Camera App"
+        capturedByTv.text = "Built by : Simatrix GPS Camera"
 
         // Request location updates
-        requestLocationUpdates()
+        if (isLocationServiceEnabled()) {
+            startLocationUpdates()
+        } else {
+            cityCountryTv.text = "Location is off. Tap to enable."
+            longLatTv.text = "GPS coordinates unavailable"
+        }
+
+        locationDetailsCard.setOnClickListener {
+            if (!isLocationServiceEnabled()) {
+                promptEnableLocation()
+            } else {
+                startLocationUpdates()
+                Toast.makeText(this, "Refreshing location...", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        cardViewGoogleMap.setOnClickListener {
+            if (!isLocationServiceEnabled()) {
+                promptEnableLocation()
+            } else {
+                startLocationUpdates()
+            }
+        }
 
         val rootLayout =
             findViewById<View>(R.id.root_layout_activity_main) // Assuming 'root_layout' is the ID of your root layout
@@ -561,131 +604,32 @@ class MainActivity : AppCompatActivity(), FoldersActivity.FolderClickListener {
             isOptionsIconSelected = false
         }
 
-        collectionIcon.setOnClickListener {
-            val intent = Intent().apply {
-                action = Intent.ACTION_VIEW
-                type = "image/*"
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK
-            }
+        val openCollection = View.OnClickListener {
+            val intent = Intent(this, CollectionActivity::class.java)
             startActivity(intent)
         }
+        collectionIcon.setOnClickListener(openCollection)
+        findViewById<TextView>(R.id.collection_tv).setOnClickListener(openCollection)
 
         flashLightIcon.setOnClickListener {
             toggleFlashlight()
         }
 
         imageCaptureIcon.setOnClickListener {
-            // Check if the timer is set to 3 seconds
-            when (timerTv.text) {
-                "Timer 3sec" -> {
-                    threeToOneAnimationView.visibility = View.VISIBLE
-                    threeToOneAnimationView.playAnimation()
-                    threeToOneAnimationView.addAnimatorListener(object : AnimatorListenerAdapter() {
-                        @RequiresApi(Build.VERSION_CODES.Q)
-                        override fun onAnimationEnd(animation: Animator) {
-                            // Stop the animation
-                            threeToOneAnimationView.clearAnimation()
-
-                            // Play the sound of the camera if sound is on
-                            if (isSoundOn) {
-                                playCameraSound()
-                            }
-
-                            // Capture the image after stopping the animation
-                            if (sharedPreferences.getBoolean("isDefaultFolderSelected", true)) {
-                                val cardView1 = findViewById<View>(R.id.location_details_card_view)
-                                val cardView2 = findViewById<View>(R.id.map_card_view)
-                                val mapFragment = supportFragmentManager.findFragmentById(R.id.map_fragment) as SupportMapFragment
-                                viewModel.captureAndSaveImageDefault(this@MainActivity, previewView, cardView1, cardView2, mapFragment)
-
-                            } else if (sharedPreferences.getBoolean(
-                                    "isSiteOneFolderSelected",
-                                    true
-                                )
-                            ) {
-                                val cardView1 = findViewById<View>(R.id.location_details_card_view)
-                                val cardView2 = findViewById<View>(R.id.map_card_view)
-                                val mapFragment = supportFragmentManager.findFragmentById(R.id.map_fragment) as SupportMapFragment
-                                viewModel.captureAndSaveImageSiteOne(this@MainActivity, previewView, cardView1, cardView2, mapFragment)
-                            } else if (sharedPreferences.getBoolean(
-                                    "isSiteTwoFolderSelected",
-                                    true
-                                )
-                            ) {
-                                val cardView1 = findViewById<View>(R.id.location_details_card_view)
-                                val cardView2 = findViewById<View>(R.id.map_card_view)
-                                val mapFragment = supportFragmentManager.findFragmentById(R.id.map_fragment) as SupportMapFragment
-                                viewModel.captureAndSaveImageSiteTwo(this@MainActivity, previewView, cardView1, cardView2, mapFragment)
-                            } else {
-                                captureImage()
-                            }
-                        }
-                    })
-                }
-
-                "Timer 5sec" -> {
-                    fiveToOneAnimationView.visibility = View.VISIBLE
-                    fiveToOneAnimationView.playAnimation()
-                    fiveToOneAnimationView.addAnimatorListener(object : AnimatorListenerAdapter() {
-                        override fun onAnimationEnd(animation: Animator) {
-                            // Stop the animation
-                            fiveToOneAnimationView.clearAnimation()
-
-                            // Play the sound of the camera if sound is on
-                            if (isSoundOn) {
-                                playCameraSound()
-                            }
-                            if (sharedPreferences.getBoolean("isDefaultFolderSelected", true)) {
-                                val cardView1 = findViewById<View>(R.id.location_details_card_view)
-                                val cardView2 = findViewById<View>(R.id.map_card_view)
-                                val mapFragment = supportFragmentManager.findFragmentById(R.id.map_fragment) as SupportMapFragment
-                                viewModel.captureAndSaveImageDefault(this@MainActivity, previewView, cardView1, cardView2, mapFragment)
-
-                            } else if (sharedPreferences.getBoolean(
-                                    "isSiteOneFolderSelected",
-                                    true
-                                )
-                            ) {
-                                val cardView1 = findViewById<View>(R.id.location_details_card_view)
-                                val cardView2 = findViewById<View>(R.id.map_card_view)
-                                val mapFragment = supportFragmentManager.findFragmentById(R.id.map_fragment) as SupportMapFragment
-                                viewModel.captureAndSaveImageSiteOne(this@MainActivity, previewView, cardView1, cardView2, mapFragment)
-                            } else if (sharedPreferences.getBoolean(
-                                    "isSiteTwoFolderSelected",
-                                    true
-                                )
-                            ) { val cardView1 = findViewById<View>(R.id.location_details_card_view)
-                                val cardView2 = findViewById<View>(R.id.map_card_view)
-                                val mapFragment = supportFragmentManager.findFragmentById(R.id.map_fragment) as SupportMapFragment
-
-                                viewModel.captureAndSaveImageSiteTwo(this@MainActivity, previewView, cardView1, cardView2, mapFragment)
-                            } else {
-                                captureImage()
-                            }
-                        }
-                    })
-                }
-
-                else -> {
-                    // Play the sound of the camera if sound is on
-                    if (isSoundOn) {
-                        playCameraSound()
+            if (!isLocationServiceEnabled()) {
+                AlertDialog.Builder(this)
+                    .setTitle("Location Turned Off")
+                    .setMessage("Location is turned off. Turn on location so GPS coordinates and address can be stamped on your photo?")
+                    .setPositiveButton("Turn On") { _, _ ->
+                        promptEnableLocation()
                     }
-                    val cardView1 = findViewById<View>(R.id.location_details_card_view)
-                    val cardView2 = findViewById<View>(R.id.map_card_view)
-                    val mapFragment = supportFragmentManager.findFragmentById(R.id.map_fragment) as SupportMapFragment
-                    // Capture the image after stopping the animation
-                    if (sharedPreferences.getBoolean("isDefaultFolderSelected", true)) {
-                        viewModel.captureAndSaveImageDefault(this@MainActivity, previewView, cardView1, cardView2, mapFragment)
-                    } else if (sharedPreferences.getBoolean("isSiteOneFolderSelected", true)) {
-                        viewModel.captureAndSaveImageSiteOne(this@MainActivity, previewView, cardView1, cardView2, mapFragment)
-                    } else if (sharedPreferences.getBoolean("isSiteTwoFolderSelected", true)) {
-                        viewModel.captureAndSaveImageSiteTwo(this@MainActivity, previewView, cardView1, cardView2, mapFragment)
-                    } else {
-                        captureImage()
+                    .setNegativeButton("Capture Anyway") { _, _ ->
+                        executeImageCapture()
                     }
-                }
+                    .show()
+                return@setOnClickListener
             }
+            executeImageCapture()
         }
         var clickCount = 0
 
@@ -746,10 +690,10 @@ class MainActivity : AppCompatActivity(), FoldersActivity.FolderClickListener {
                 this,
                 Manifest.permission.ACCESS_COARSE_LOCATION
             ) != PackageManager.PERMISSION_GRANTED
-        )
+        ) {
             ActivityCompat.requestPermissions(this, permissions, PERMISSION_REQUEST_CODE)
-        else {
-            displayCurrentLocation()
+        } else {
+            checkLocationSettingsAndStart()
         }
     }
 
@@ -775,7 +719,7 @@ class MainActivity : AppCompatActivity(), FoldersActivity.FolderClickListener {
 
             if (cameraPermissionGranted && locationPermissionGranted) {
                 startCamera()
-                displayCurrentLocation()
+                checkLocationSettingsAndStart()
                 Toast.makeText(this, "Permissions Granted", Toast.LENGTH_LONG).show()
             } else {
                 Toast.makeText(this, "Permissions Denied", Toast.LENGTH_LONG).show()
@@ -874,138 +818,365 @@ class MainActivity : AppCompatActivity(), FoldersActivity.FolderClickListener {
     }
 
 
+    @RequiresApi(Build.VERSION_CODES.Q)
+    private fun executeImageCapture() {
+        // Check if the timer is set to 3 seconds
+        when (timerTv.text) {
+            "Timer 3sec" -> {
+                threeToOneAnimationView.visibility = View.VISIBLE
+                threeToOneAnimationView.playAnimation()
+                threeToOneAnimationView.addAnimatorListener(object : AnimatorListenerAdapter() {
+                    @RequiresApi(Build.VERSION_CODES.Q)
+                    override fun onAnimationEnd(animation: Animator) {
+                        // Stop the animation
+                        threeToOneAnimationView.clearAnimation()
+
+                        // Play the sound of the camera if sound is on
+                        if (isSoundOn) {
+                            playCameraSound()
+                        }
+
+                        // Capture the image after stopping the animation
+                        if (sharedPreferences.getBoolean("isDefaultFolderSelected", true)) {
+                            val cardView1 = findViewById<View>(R.id.location_details_card_view)
+                            val cardView2 = findViewById<View>(R.id.map_card_view)
+                            val mapFragment = supportFragmentManager.findFragmentById(R.id.map_fragment) as SupportMapFragment
+                            viewModel.captureAndSaveImageDefault(this@MainActivity, previewView, cardView1, cardView2, mapFragment)
+
+                        } else if (sharedPreferences.getBoolean(
+                                "isSiteOneFolderSelected",
+                                true
+                            )
+                        ) {
+                            val cardView1 = findViewById<View>(R.id.location_details_card_view)
+                            val cardView2 = findViewById<View>(R.id.map_card_view)
+                            val mapFragment = supportFragmentManager.findFragmentById(R.id.map_fragment) as SupportMapFragment
+                            viewModel.captureAndSaveImageSiteOne(this@MainActivity, previewView, cardView1, cardView2, mapFragment)
+                        } else if (sharedPreferences.getBoolean(
+                                "isSiteTwoFolderSelected",
+                                true
+                            )
+                        ) {
+                            val cardView1 = findViewById<View>(R.id.location_details_card_view)
+                            val cardView2 = findViewById<View>(R.id.map_card_view)
+                            val mapFragment = supportFragmentManager.findFragmentById(R.id.map_fragment) as SupportMapFragment
+                            viewModel.captureAndSaveImageSiteTwo(this@MainActivity, previewView, cardView1, cardView2, mapFragment)
+                        } else {
+                            captureImage()
+                        }
+                    }
+                })
+            }
+
+            "Timer 5sec" -> {
+                fiveToOneAnimationView.visibility = View.VISIBLE
+                fiveToOneAnimationView.playAnimation()
+                fiveToOneAnimationView.addAnimatorListener(object : AnimatorListenerAdapter() {
+                    override fun onAnimationEnd(animation: Animator) {
+                        // Stop the animation
+                        fiveToOneAnimationView.clearAnimation()
+
+                        // Play the sound of the camera if sound is on
+                        if (isSoundOn) {
+                            playCameraSound()
+                        }
+                        if (sharedPreferences.getBoolean("isDefaultFolderSelected", true)) {
+                            val cardView1 = findViewById<View>(R.id.location_details_card_view)
+                            val cardView2 = findViewById<View>(R.id.map_card_view)
+                            val mapFragment = supportFragmentManager.findFragmentById(R.id.map_fragment) as SupportMapFragment
+                            viewModel.captureAndSaveImageDefault(this@MainActivity, previewView, cardView1, cardView2, mapFragment)
+
+                        } else if (sharedPreferences.getBoolean(
+                                "isSiteOneFolderSelected",
+                                true
+                            )
+                        ) {
+                            val cardView1 = findViewById<View>(R.id.location_details_card_view)
+                            val cardView2 = findViewById<View>(R.id.map_card_view)
+                            val mapFragment = supportFragmentManager.findFragmentById(R.id.map_fragment) as SupportMapFragment
+                            viewModel.captureAndSaveImageSiteOne(this@MainActivity, previewView, cardView1, cardView2, mapFragment)
+                        } else if (sharedPreferences.getBoolean(
+                                "isSiteTwoFolderSelected",
+                                true
+                            )
+                        ) { val cardView1 = findViewById<View>(R.id.location_details_card_view)
+                            val cardView2 = findViewById<View>(R.id.map_card_view)
+                            val mapFragment = supportFragmentManager.findFragmentById(R.id.map_fragment) as SupportMapFragment
+
+                            viewModel.captureAndSaveImageSiteTwo(this@MainActivity, previewView, cardView1, cardView2, mapFragment)
+                        } else {
+                            captureImage()
+                        }
+                    }
+                })
+            }
+
+            else -> {
+                // Play the sound of the camera if sound is on
+                if (isSoundOn) {
+                    playCameraSound()
+                }
+                val cardView1 = findViewById<View>(R.id.location_details_card_view)
+                val cardView2 = findViewById<View>(R.id.map_card_view)
+                val mapFragment = supportFragmentManager.findFragmentById(R.id.map_fragment) as SupportMapFragment
+                // Capture the image after stopping the animation
+                if (sharedPreferences.getBoolean("isDefaultFolderSelected", true)) {
+                    viewModel.captureAndSaveImageDefault(this@MainActivity, previewView, cardView1, cardView2, mapFragment)
+                } else if (sharedPreferences.getBoolean("isSiteOneFolderSelected", true)) {
+                    viewModel.captureAndSaveImageSiteOne(this@MainActivity, previewView, cardView1, cardView2, mapFragment)
+                } else if (sharedPreferences.getBoolean("isSiteTwoFolderSelected", true)) {
+                    viewModel.captureAndSaveImageSiteTwo(this@MainActivity, previewView, cardView1, cardView2, mapFragment)
+                } else {
+                    captureImage()
+                }
+            }
+        }
+    }
+
+    private fun hasLocationPermission(): Boolean {
+        return ContextCompat.checkSelfPermission(
+            this,
+            Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED ||
+        ContextCompat.checkSelfPermission(
+            this,
+            Manifest.permission.ACCESS_COARSE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+    }
+
+    private fun isLocationServiceEnabled(): Boolean {
+        val locationManager = getSystemService(Context.LOCATION_SERVICE) as? LocationManager ?: return false
+        return locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) ||
+               locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
+    }
+
+    private fun checkLocationSettingsAndStart() {
+        if (!hasLocationPermission()) return
+        if (isLocationServiceEnabled()) {
+            startLocationUpdates()
+        } else {
+            cityCountryTv.text = "Location is off. Tap to enable."
+            longLatTv.text = "GPS coordinates unavailable"
+            promptEnableLocation()
+        }
+    }
+
+    private fun promptEnableLocation() {
+        if (!hasLocationPermission()) {
+            val permissions = arrayOf(
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            )
+            ActivityCompat.requestPermissions(this, permissions, PERMISSION_REQUEST_CODE)
+            return
+        }
+
+        val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 4000L)
+            .setMinUpdateIntervalMillis(2000L)
+            .build()
+
+        val builder = LocationSettingsRequest.Builder()
+            .addLocationRequest(locationRequest)
+            .setAlwaysShow(true)
+
+        val client: SettingsClient = LocationServices.getSettingsClient(this)
+        val task: Task<LocationSettingsResponse> = client.checkLocationSettings(builder.build())
+
+        task.addOnSuccessListener(this) {
+            startLocationUpdates()
+        }
+
+        task.addOnFailureListener(this) { exception ->
+            if (exception is ResolvableApiException) {
+                try {
+                    isResolvingLocation = true
+                    exception.startResolutionForResult(this@MainActivity, REQUEST_CHECK_SETTINGS)
+                } catch (sendEx: IntentSender.SendIntentException) {
+                    showFallbackLocationSettingsDialog()
+                }
+            } else {
+                showFallbackLocationSettingsDialog()
+            }
+        }
+    }
+
+    private fun showFallbackLocationSettingsDialog() {
+        if (isFinishing || isDestroyed) return
+        AlertDialog.Builder(this)
+            .setTitle("Turn On Location")
+            .setMessage("Location services are required to show your address and stamp GPS coordinates on photos. Please turn on Location in Settings.")
+            .setPositiveButton("Settings") { _, _ ->
+                startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == REQUEST_CHECK_SETTINGS) {
+            isResolvingLocation = false
+            if (resultCode == Activity.RESULT_OK) {
+                Toast.makeText(this, "Location enabled. Acquiring GPS...", Toast.LENGTH_SHORT).show()
+                startLocationUpdates()
+            } else {
+                Toast.makeText(this, "Location is disabled. Tap location card to enable.", Toast.LENGTH_LONG).show()
+                cityCountryTv.text = "Location is off. Tap to enable."
+                longLatTv.text = "GPS coordinates unavailable"
+            }
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun startLocationUpdates() {
+        if (!hasLocationPermission()) return
+
+        if (!isLocationServiceEnabled()) {
+            promptEnableLocation()
+            return
+        }
+
+        // Try getting last known location immediately
+        fusedLocationClient.lastLocation.addOnSuccessListener { location: Location? ->
+            if (location != null) {
+                updateLocationDetails(location)
+            }
+        }
+
+        // Request fresh current location
+        fusedLocationClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, null)
+            .addOnSuccessListener { freshLocation: Location? ->
+                if (freshLocation != null) {
+                    updateLocationDetails(freshLocation)
+                }
+            }
+
+        // Setup real-time updates so movement or newly acquired fix automatically updates the UI
+        if (locationCallback == null) {
+            locationCallback = object : LocationCallback() {
+                override fun onLocationResult(locationResult: LocationResult) {
+                    for (loc in locationResult.locations) {
+                        if (loc != null) {
+                            updateLocationDetails(loc)
+                            break
+                        }
+                    }
+                }
+            }
+        }
+
+        val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 4000L)
+            .setMinUpdateIntervalMillis(2000L)
+            .build()
+
+        fusedLocationClient.removeLocationUpdates(locationCallback!!)
+        fusedLocationClient.requestLocationUpdates(
+            locationRequest,
+            locationCallback!!,
+            Looper.getMainLooper()
+        )
+    }
+
+    private fun stopLocationUpdates() {
+        locationCallback?.let {
+            fusedLocationClient.removeLocationUpdates(it)
+        }
+    }
+
     @SuppressLint("SetTextI18n")
     private fun requestLocationUpdates() {
-        if (ActivityCompat.checkSelfPermission(
-                this,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
-                this,
-                Manifest.permission.ACCESS_COARSE_LOCATION
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
-
-            return
-
-        }
-    }
-
-
-    private fun updateMapTypeFromTemplate(mapType: Int) {
-        val mapFragment =
-            supportFragmentManager.findFragmentById(R.id.map_fragment) as? SupportMapFragment
-        mapFragment?.getMapAsync { googleMap ->
-            googleMap.mapType = mapType
-        }
-    }
-
-    fun updateLatLongText(selectedText: String) {
-        val longLatTextView = findViewById<TextView>(R.id.long_lat_tv)
-        longLatTextView.text = selectedText
+        checkLocationSettingsAndStart()
     }
 
     @SuppressLint("SetTextI18n")
     private fun displayCurrentLocation() {
-        if (ActivityCompat.checkSelfPermission(
-                this,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
-                this,
-                Manifest.permission.ACCESS_COARSE_LOCATION
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
-            return
+        checkLocationSettingsAndStart()
+    }
+
+    @SuppressLint("SetTextI18n")
+    private fun updateLocationDetails(location: Location) {
+        val address = getAddress(location.latitude, location.longitude)
+        val exactAddress = if (address != null) {
+            val fullLine = if (address.maxAddressLineIndex >= 0) address.getAddressLine(0) else null
+            if (!fullLine.isNullOrBlank()) {
+                fullLine
+            } else {
+                listOfNotNull(
+                    address.subThoroughfare,
+                    address.thoroughfare,
+                    address.subLocality,
+                    address.locality,
+                    address.adminArea,
+                    address.postalCode,
+                    address.countryName
+                ).filter { it.isNotBlank() }.joinToString(", ")
+            }
+        } else {
+            "Lat: ${String.format(Locale.US, "%.5f", location.latitude)}, Long: ${String.format(Locale.US, "%.5f", location.longitude)}"
         }
-        fusedLocationClient.lastLocation.addOnSuccessListener { location: Location? ->
-            location?.let {
-                val address = getAddress(location.latitude, location.longitude)
-                val city = address.locality
-                val province = address.adminArea
-                val country = address.countryName
+        cityCountryTv.text = exactAddress
 
-                cityCountryTv.text = "$city, $province, $country"
+        val latFormatted = String.format(Locale.US, "%.6f", Math.abs(location.latitude))
+        val lonFormatted = String.format(Locale.US, "%.6f", Math.abs(location.longitude))
+        val latDir = if (location.latitude >= 0) "N" else "S"
+        val lonDir = if (location.longitude >= 0) "E" else "W"
+        findViewById<TextView>(R.id.long_lat_tv).text = "Lat $latFormatted° $latDir  Long $lonFormatted° $lonDir"
 
-                findViewById<TextView>(R.id.long_lat_tv).text  = getSharedPreferences("LatLongSelection", Context.MODE_PRIVATE).toString()
-                val selectedLatLongText = sharedPreferencesLatLong.getString("selected_lat_long_text", getString(R.string.lat_long))
+        val currentDate = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date())
+        val currentDay = SimpleDateFormat("EEEE", Locale.getDefault()).format(Date())
+        val currentTime = SimpleDateFormat("hh:mm:ss a", Locale.getDefault()).format(Date())
+        findViewById<TextView>(R.id.date_day_time_tv).text = "$currentDate, $currentDay, $currentTime"
 
-                updateLatLongText(selectedLatLongText ?: getString(R.string.lat_long))
+        val timeZoneTextView = findViewById<TextView>(R.id.time_zone_tv_main_template)
+        timeZoneTextView.text = "GMT " + SimpleDateFormat("XXX", Locale.getDefault()).format(Date())
+        timeZoneTextView.visibility = View.VISIBLE
 
-                val currentDate =
-                    SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date())
-                val currentDay = SimpleDateFormat("EEEE", Locale.getDefault()).format(Date())
-                val currentTime =
-                    SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
+        val altitudeTextView = findViewById<TextView>(R.id.altitude_tv_main_template)
+        if (location.hasAltitude() && location.altitude != 0.0) {
+            altitudeTextView.text = "${String.format(Locale.US, "%.1f", location.altitude)} m"
+            altitudeTextView.visibility = View.VISIBLE
+            altitudeIcon.visibility = View.VISIBLE
+        } else {
+            altitudeTextView.visibility = View.GONE
+            altitudeIcon.visibility = View.GONE
+        }
 
-                findViewById<TextView>(R.id.date_day_time_tv).text = "$currentDate, $currentDay, $currentTime"
+        val accuracyTextView = findViewById<TextView>(R.id.accuracy_tv_template_main)
+        if (location.hasAccuracy()) {
+            accuracyTextView.text = "±${String.format(Locale.US, "%.1f", location.accuracy)} m"
+            accuracyTextView.visibility = View.VISIBLE
+            accuracyIcon.visibility = View.VISIBLE
+        } else {
+            accuracyTextView.visibility = View.GONE
+            accuracyIcon.visibility = View.GONE
+        }
 
-                findViewById<TextView>(R.id.plus_code_tv_main_location_details_card).text = getSharedPreferences("PLusCodeSelection", Context.MODE_PRIVATE).toString()
+        // Hide unused placeholders so they never display "Lat/Long" dummy text
+        findViewById<TextView>(R.id.plus_code_tv_main_location_details_card).visibility = View.GONE
+        findViewById<TextView>(R.id.weather_tv_main_template_card).visibility = View.GONE
+        cloudyIcon.visibility = View.GONE
+        findViewById<TextView>(R.id.wind_tv_main_template).visibility = View.GONE
+        windIcon.visibility = View.GONE
+        findViewById<TextView>(R.id.pressure_tv_main_template).visibility = View.GONE
+        pressureIcon.visibility = View.GONE
 
-                val selectedPlusCodeText = sharedPreferencesPlusCode.getString("selected_plus_code_text", getString(R.string.lat_long))
-
-                updatePlusCodeText(selectedPlusCodeText ?: getString(R.string.lat_long))
-
-                findViewById<TextView>(R.id.time_zone_tv_main_template).text = getSharedPreferences("TimeZoneSelection", Context.MODE_PRIVATE).toString()
-
-                val selectedTimeZoneText = sharedPreferencesTimeZone.getString("selected_time_zone_text", getString(R.string.lat_long))
-
-                updateTimeZoneText(selectedTimeZoneText ?: getString(R.string.lat_long))
-
-                findViewById<TextView>(R.id.weather_tv_main_template_card).text = getSharedPreferences("WeatherSelection", Context.MODE_PRIVATE).toString()
-
-                val selectedWeatherText = sharedPreferencesWeatherSelection.getString("selected_weather_text", getString(R.string.lat_long))
-
-                updateWeatherText(selectedWeatherText ?: getString(R.string.lat_long))
-
-                findViewById<TextView>(R.id.wind_tv_main_template).text = getSharedPreferences("WindSelection", Context.MODE_PRIVATE).toString()
-
-                val selectedWindText = sharedPreferencesWindSelection.getString("selected_wind_text", getString(R.string.lat_long))
-
-                updateWindText(selectedWindText ?: getString(R.string.lat_long))
-
-                findViewById<TextView>(R.id.pressure_tv_main_template).text = getSharedPreferences("PressureSelection", Context.MODE_PRIVATE).toString()
-
-                val selectedPressureText = sharedPreferencesPressureSelection.getString("selected_pressure_text", getString(R.string.lat_long))
-
-                updatePressureText(selectedPressureText ?: getString(R.string.lat_long))
-
-                findViewById<TextView>(R.id.altitude_tv_main_template).text = getSharedPreferences("AltitudeSelection", Context.MODE_PRIVATE).toString()
-
-                val selectedAltitudeText = sharedPreferencesAltitudeText.getString("selected_altitude_text", getString(R.string.lat_long))
-
-                updateAltitudeText(selectedAltitudeText ?: getString(R.string.lat_long))
-
-                findViewById<TextView>(R.id.accuracy_tv_template_main).text = getSharedPreferences("AccuracySelection", Context.MODE_PRIVATE).toString()
-
-                val selectedAccuracyText = sharedPreferencesAccuracySelection.getString("selected_accuracy_text", getString(R.string.lat_long))
-
-                updateAccuracyText(selectedAccuracyText ?: getString(R.string.lat_long))
-
-
-            }
-            val mapFragment =
-                supportFragmentManager.findFragmentById(R.id.map_fragment) as SupportMapFragment
-            mapFragment.getMapAsync { googleMap ->
-                // Add a marker at the current location and move the camera
-                val latLng = location?.let { LatLng(it.latitude, location.longitude) }
-                latLng?.let { MarkerOptions().position(it).title("Marker") }
-                    ?.let { googleMap.addMarker(it) }
-                latLng?.let { CameraUpdateFactory.newLatLngZoom(it, 15f) }
-                    ?.let { googleMap.moveCamera(it) }
-            }
+        val mapFragment = supportFragmentManager.findFragmentById(R.id.map_fragment) as? SupportMapFragment
+        mapFragment?.getMapAsync { googleMap ->
+            val latLng = LatLng(location.latitude, location.longitude)
+            googleMap.clear()
+            googleMap.addMarker(MarkerOptions().position(latLng).title("Current Location"))
+            googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 16f))
         }
     }
 
-    private fun getAddress(latitude: Double, longitude: Double): Address {
-        val geocoder = Geocoder(this, Locale.getDefault())
-        val addresses: List<Address> = geocoder.getFromLocation(latitude, longitude, 1)!!
-        return addresses[0]
+    private fun getAddress(latitude: Double, longitude: Double): Address? {
+        return try {
+            val geocoder = Geocoder(this, Locale.getDefault())
+            val addresses: List<Address>? = geocoder.getFromLocation(latitude, longitude, 1)
+            if (!addresses.isNullOrEmpty()) addresses[0] else null
+        } catch (e: Exception) {
+            null
+        }
     }
 
     fun updatePlusCodeText(selectedText: String) {
@@ -1081,6 +1252,19 @@ class MainActivity : AppCompatActivity(), FoldersActivity.FolderClickListener {
 
 
 
+    private fun updateMapTypeFromTemplate(mapType: Int) {
+        val mapFragment =
+            supportFragmentManager.findFragmentById(R.id.map_fragment) as? SupportMapFragment
+        mapFragment?.getMapAsync { googleMap ->
+            googleMap.mapType = mapType
+        }
+    }
+
+    fun updateLatLongText(selectedText: String) {
+        val longLatTextView = findViewById<TextView>(R.id.long_lat_tv)
+        longLatTextView.text = selectedText
+    }
+
     override fun onResume() {
         super.onResume()
         // Retrieve the selected map type from SharedPreferences
@@ -1090,9 +1274,61 @@ class MainActivity : AppCompatActivity(), FoldersActivity.FolderClickListener {
         cameraIcon.setImageResource(R.drawable.camera_change_icon_main_activity)
         flashLightIcon.setImageResource(R.drawable.flash_light_icon_main_activity)
         restoreTimerState()
+        updateCollectionThumbnail()
         val availability = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(this)
         if (availability != ConnectionResult.SUCCESS) {
             GoogleApiAvailability.getInstance().getErrorDialog(this, availability, 0)?.show()
+        }
+
+        if (hasLocationPermission()) {
+            if (isLocationServiceEnabled()) {
+                startLocationUpdates()
+            } else if (!isResolvingLocation && !hasPromptedLocationOnResume) {
+                hasPromptedLocationOnResume = true
+                promptEnableLocation()
+            }
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        stopLocationUpdates()
+    }
+
+    private fun updateCollectionThumbnail() {
+        val executor = java.util.concurrent.Executors.newSingleThreadExecutor()
+        executor.execute {
+            var latestFile: File? = null
+
+            val dirs = listOf(
+                File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM), "Camera"),
+                File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM), "GPS Map Camera App/Site 1"),
+                File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM), "GPS Map Camera App/Site 2")
+            )
+
+            for (dir in dirs) {
+                if (dir.exists() && dir.isDirectory) {
+                    val files = dir.listFiles { f ->
+                        f.isFile && (f.name.endsWith(".jpg", true) || f.name.endsWith(".jpeg", true) || f.name.endsWith(".png", true))
+                    }
+                    val recent = files?.maxByOrNull { it.lastModified() }
+                    if (recent != null && (latestFile == null || recent.lastModified() > latestFile.lastModified())) {
+                        latestFile = recent
+                    }
+                }
+            }
+
+            if (latestFile != null) {
+                try {
+                    val options = BitmapFactory.Options().apply { inSampleSize = 8 }
+                    val bitmap = BitmapFactory.decodeFile(latestFile.absolutePath, options)
+                    if (bitmap != null) {
+                        runOnUiThread {
+                            collectionIcon.setImageBitmap(bitmap)
+                        }
+                    }
+                } catch (_: Exception) {}
+            }
         }
     }
 
@@ -1405,6 +1641,7 @@ class MainActivity : AppCompatActivity(), FoldersActivity.FolderClickListener {
         private const val KEY_LINE_1 = "key_line_1"
         private const val KEY_LINE_2 = "key_line_2"
         private const val KEY_LINE_3 = "key_line_3"
+        private const val REQUEST_CHECK_SETTINGS = 1001
     }
 
 

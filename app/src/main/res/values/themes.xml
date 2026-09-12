@@ -1,8 +1,15 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
-    <style name="Base.Theme.GPSMapCameraApp" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your light theme here. -->
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+    <style name="Base.Theme.GPSMapCameraApp" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="android:windowBackground">#121212</item>
+        <item name="android:textColor">#FFFFFF</item>
+        <item name="android:textColorPrimary">#FFFFFF</item>
+        <item name="android:textColorSecondary">#BEBEBE</item>
+        <item name="colorSurface">#1E1E1E</item>
+        <item name="colorOnSurface">#FFFFFF</item>
+        <item name="android:colorBackground">#121212</item>
+        <item name="colorPrimary">#FFA000</item>
+        <item name="colorOnPrimary">#000000</item>
     </style>
 
     <style name="Theme.GPSMapCameraApp" parent="Base.Theme.GPSMapCameraApp" />

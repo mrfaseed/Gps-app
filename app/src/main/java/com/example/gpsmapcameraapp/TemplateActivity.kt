@@ -30,6 +30,7 @@ import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.android.gms.location.Priority
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -162,8 +163,6 @@ class TemplateActivity : AppCompatActivity() {
         }
 
         backIcon.setOnClickListener {
-            val intent = Intent(this, MainActivity::class.java)
-            startActivity(intent)
             finish()
         }
         updateCircleForMapTypeIcon(selectedMapType)
@@ -807,40 +806,74 @@ class TemplateActivity : AppCompatActivity() {
             return
         }
         fusedLocationClient.lastLocation.addOnSuccessListener { location: Location? ->
-            location?.let {
-                val address = getAddress(location.latitude, location.longitude)
-                val city = address.locality
-                val province = address.adminArea
-                val country = address.countryName
-
-                cityCountryTv.text = "$city, $province, $country"
-                longLatTv.text = selectedTextLatLong
-
-                val currentDate = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date())
-                val currentDay = SimpleDateFormat("EEEE", Locale.getDefault()).format(Date())
-                val currentTime = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
-
-                dayDateTimeTv.text = "$currentDate, $currentDay, $currentTime"
-            }
-
-            val mapFragment = supportFragmentManager.findFragmentById(R.id.map_fragment_template) as SupportMapFragment
-            mapFragment.getMapAsync { googleMap ->
-                googleMap.mapType = selectedMapType
+            if (location != null) {
+                updateTemplateUiWithLocation(location)
+            } else {
+                if (ActivityCompat.checkSelfPermission(
+                        this,
+                        Manifest.permission.ACCESS_FINE_LOCATION
+                    ) == PackageManager.PERMISSION_GRANTED || ActivityCompat.checkSelfPermission(
+                        this,
+                        Manifest.permission.ACCESS_COARSE_LOCATION
+                    ) == PackageManager.PERMISSION_GRANTED
+                ) {
+                    fusedLocationClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, null)
+                        .addOnSuccessListener { freshLocation: Location? ->
+                            freshLocation?.let { updateTemplateUiWithLocation(it) }
+                        }
+                }
             }
         }
     }
 
-    private fun getAddress(latitude: Double, longitude: Double): Address {
-        val geocoder = Geocoder(this, Locale.getDefault())
-        val addresses: List<Address> = geocoder.getFromLocation(latitude, longitude, 1)!!
-        return addresses[0]
+    private fun updateTemplateUiWithLocation(location: Location) {
+        val address = getAddress(location.latitude, location.longitude)
+        val exactAddress = if (address != null) {
+            val fullLine = if (address.maxAddressLineIndex >= 0) address.getAddressLine(0) else null
+            if (!fullLine.isNullOrBlank()) {
+                fullLine
+            } else {
+                val city = address.locality ?: ""
+                val province = address.adminArea ?: ""
+                val country = address.countryName ?: ""
+                listOf(city, province, country).filter { it.isNotBlank() }.joinToString(", ")
+            }
+        } else {
+            "${location.latitude}, ${location.longitude}"
+        }
+
+        cityCountryTv.text = exactAddress
+        val latFormatted = String.format(Locale.US, "%.6f", Math.abs(location.latitude))
+        val lonFormatted = String.format(Locale.US, "%.6f", Math.abs(location.longitude))
+        val latDir = if (location.latitude >= 0) "N" else "S"
+        val lonDir = if (location.longitude >= 0) "E" else "W"
+        longLatTv.text = "Lat $latFormatted° $latDir  Long $lonFormatted° $lonDir"
+
+        val currentDate = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date())
+        val currentDay = SimpleDateFormat("EEEE", Locale.getDefault()).format(Date())
+        val currentTime = SimpleDateFormat("hh:mm:ss a", Locale.getDefault()).format(Date())
+
+        dayDateTimeTv.text = "$currentDate, $currentDay, $currentTime"
+
+        val mapFragment = supportFragmentManager.findFragmentById(R.id.map_fragment_template) as? SupportMapFragment
+        mapFragment?.getMapAsync { googleMap ->
+            googleMap.mapType = selectedMapType
+        }
+    }
+
+    private fun getAddress(latitude: Double, longitude: Double): Address? {
+        return try {
+            val geocoder = Geocoder(this, Locale.getDefault())
+            val addresses: List<Address>? = geocoder.getFromLocation(latitude, longitude, 1)
+            if (!addresses.isNullOrEmpty()) addresses[0] else null
+        } catch (e: Exception) {
+            null
+        }
     }
 
     @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
         super.onBackPressed()
-        val intent = Intent(this, MainActivity::class.java)
-        startActivity(intent)
         finish()
     }
 }
