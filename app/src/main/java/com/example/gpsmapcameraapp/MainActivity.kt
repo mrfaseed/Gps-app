@@ -44,6 +44,9 @@ import androidx.camera.view.PreviewView
 import androidx.cardview.widget.CardView
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.ViewModelProvider
 import com.airbnb.lottie.LottieAnimationView
 import com.example.gpsmapcameraapp.focusview.FocusView
@@ -157,6 +160,23 @@ class MainActivity : AppCompatActivity(), FoldersActivity.FolderClickListener {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        // Configure edge-to-edge transparent status bar with crisp white system icons
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        window.statusBarColor = Color.TRANSPARENT
+        val insetsController = WindowCompat.getInsetsController(window, window.decorView)
+        insetsController.isAppearanceLightStatusBars = false
+
+        // Ensure top control bar accommodates transparent status bar insets
+        val topControlsBar = findViewById<View>(R.id.linear_layout_main_activity)
+        ViewCompat.setOnApplyWindowInsetsListener(topControlsBar) { view, insets ->
+            val statusBarHeight = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top
+            val padSide = (16 * resources.displayMetrics.density).toInt()
+            val padTop = statusBarHeight + (8 * resources.displayMetrics.density).toInt()
+            val padBottom = (8 * resources.displayMetrics.density).toInt()
+            view.setPadding(padSide, padTop, padSide, padBottom)
+            insets
+        }
+
         templateIcon = findViewById(R.id.template_icon)
         templateIcon.setOnClickListener {
             val intent = Intent(this, TemplateActivity::class.java)
@@ -186,6 +206,7 @@ class MainActivity : AppCompatActivity(), FoldersActivity.FolderClickListener {
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
         longLatTv = findViewById(R.id.long_lat_tv)
         cardViewGoogleMap = findViewById(R.id.map_card_view)
+        cardViewGoogleMap.setCardBackgroundColor(Color.parseColor("#59000000"))
         soundOffIcon = findViewById(R.id.sound_off_icon)
         soundOffTv = findViewById(R.id.sound_off_tv)
         focusManualIcon = findViewById(R.id.focus_manual_icon)
@@ -214,6 +235,7 @@ class MainActivity : AppCompatActivity(), FoldersActivity.FolderClickListener {
         altitudeIcon = findViewById(R.id.altitude_icon_main)
         accuracyIcon = findViewById(R.id.accuracy_icon_main)
         locationDetailsCard = findViewById(R.id.location_details_card_view)
+        locationDetailsCard.setCardBackgroundColor(Color.TRANSPARENT)
         gpsStatusTv = findViewById(R.id.gps_status_tv)
         gpsStatusDot = findViewById(R.id.gps_status_dot)
 

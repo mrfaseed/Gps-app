@@ -73,13 +73,15 @@
     <LinearLayout
         android:id="@+id/linear_layout_main_activity"
         android:layout_width="match_parent"
-        android:layout_height="72dp"
+        android:layout_height="wrap_content"
+        android:minHeight="64dp"
         android:background="@drawable/bg_top_bar_gradient"
         android:gravity="center_vertical"
         android:orientation="horizontal"
         android:paddingStart="16dp"
         android:paddingTop="8dp"
         android:paddingEnd="16dp"
+        android:paddingBottom="8dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
@@ -311,9 +313,11 @@
         android:layout_height="96dp"
         android:layout_marginStart="12dp"
         android:layout_marginBottom="12dp"
-        app:cardBackgroundColor="#99141414"
+        app:cardBackgroundColor="#59000000"
         app:cardCornerRadius="14dp"
         app:cardElevation="0dp"
+        app:cardPreventCornerOverlap="false"
+        app:cardUseCompatPadding="false"
         app:layout_constraintBottom_toTopOf="@+id/card_view_main_activity"
         app:layout_constraintStart_toStartOf="parent">
 
@@ -322,6 +326,12 @@
             android:name="com.google.android.gms.maps.SupportMapFragment"
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
+
+        <!-- Subtle frosted glass border overlay -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@drawable/bg_glass_card_stroke" />
 
     </androidx.cardview.widget.CardView>
 
@@ -333,9 +343,11 @@
         android:layout_marginStart="8dp"
         android:layout_marginEnd="12dp"
         android:layout_marginBottom="12dp"
-        app:cardBackgroundColor="#B3121212"
+        app:cardBackgroundColor="@android:color/transparent"
         app:cardCornerRadius="14dp"
         app:cardElevation="0dp"
+        app:cardPreventCornerOverlap="false"
+        app:cardUseCompatPadding="false"
         app:layout_constraintBottom_toTopOf="@+id/card_view_main_activity"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@+id/map_card_view">
