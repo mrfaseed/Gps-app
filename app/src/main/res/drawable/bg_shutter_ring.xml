@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Outer Glow / Ring -->
+    <item>
+        <shape android:shape="oval">
+            <stroke android:width="4dp" android:color="#F0FFFFFF" />
+            <size android:width="72dp" android:height="72dp" />
+            <solid android:color="#20FFFFFF" />
+        </shape>
+    </item>
+    <!-- Inner Spacing & Solid White Shutter Core -->
+    <item android:top="7dp" android:bottom="7dp" android:left="7dp" android:right="7dp">
+        <shape android:shape="oval">
+            <solid android:color="#FFFFFFFF" />
+        </shape>
+    </item>
+</layer-list>

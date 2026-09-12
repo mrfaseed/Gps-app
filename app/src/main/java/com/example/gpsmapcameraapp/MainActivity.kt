@@ -147,6 +147,8 @@ class MainActivity : AppCompatActivity(), FoldersActivity.FolderClickListener {
     private var locationCallback: LocationCallback? = null
     private var isResolvingLocation = false
     private var hasPromptedLocationOnResume = false
+    private lateinit var gpsStatusTv: TextView
+    private lateinit var gpsStatusDot: ImageView
 
 
     @RequiresApi(Build.VERSION_CODES.Q)
@@ -212,6 +214,17 @@ class MainActivity : AppCompatActivity(), FoldersActivity.FolderClickListener {
         altitudeIcon = findViewById(R.id.altitude_icon_main)
         accuracyIcon = findViewById(R.id.accuracy_icon_main)
         locationDetailsCard = findViewById(R.id.location_details_card_view)
+        gpsStatusTv = findViewById(R.id.gps_status_tv)
+        gpsStatusDot = findViewById(R.id.gps_status_dot)
+
+        findViewById<View>(R.id.gps_status_pill)?.setOnClickListener {
+            if (!isLocationServiceEnabled()) {
+                promptEnableLocation()
+            } else {
+                startLocationUpdates()
+                Toast.makeText(this, "Acquiring highest precision GPS fix...", Toast.LENGTH_SHORT).show()
+            }
+        }
 
         sharedPreferences = getSharedPreferences(PREF_NAME_MANUAL, Context.MODE_PRIVATE)
         sharedPreferencesLatLong = getSharedPreferences("LatLongSelection", Context.MODE_PRIVATE)
@@ -803,6 +816,7 @@ class MainActivity : AppCompatActivity(), FoldersActivity.FolderClickListener {
                         isBackCameraSelected =
                             !isBackCameraSelected // Toggle the camera selection flag
 
+                        cameraIcon.animate().rotationBy(180f).setDuration(300).start()
                         // Update the camera icon based on the selected camera
                         cameraIcon.setImageResource(if (isBackCameraSelected) R.drawable.camera_change_icon_main_activity else R.drawable.front_cam_icon)
                     } catch (exc: Exception) {
@@ -820,6 +834,10 @@ class MainActivity : AppCompatActivity(), FoldersActivity.FolderClickListener {
 
     @RequiresApi(Build.VERSION_CODES.Q)
     private fun executeImageCapture() {
+        imageCaptureIcon.animate().scaleX(0.88f).scaleY(0.88f).setDuration(80).withEndAction {
+            imageCaptureIcon.animate().scaleX(1f).scaleY(1f).setDuration(80).start()
+        }.start()
+
         // Check if the timer is set to 3 seconds
         when (timerTv.text) {
             "Timer 3sec" -> {
@@ -953,8 +971,10 @@ class MainActivity : AppCompatActivity(), FoldersActivity.FolderClickListener {
     private fun checkLocationSettingsAndStart() {
         if (!hasLocationPermission()) return
         if (isLocationServiceEnabled()) {
+            if (::gpsStatusTv.isInitialized) gpsStatusTv.text = "Acquiring GPS..."
             startLocationUpdates()
         } else {
+            if (::gpsStatusTv.isInitialized) gpsStatusTv.text = "Location Off"
             cityCountryTv.text = "Location is off. Tap to enable."
             longLatTv.text = "GPS coordinates unavailable"
             promptEnableLocation()
@@ -1017,9 +1037,11 @@ class MainActivity : AppCompatActivity(), FoldersActivity.FolderClickListener {
         if (requestCode == REQUEST_CHECK_SETTINGS) {
             isResolvingLocation = false
             if (resultCode == Activity.RESULT_OK) {
+                if (::gpsStatusTv.isInitialized) gpsStatusTv.text = "Acquiring GPS..."
                 Toast.makeText(this, "Location enabled. Acquiring GPS...", Toast.LENGTH_SHORT).show()
                 startLocationUpdates()
             } else {
+                if (::gpsStatusTv.isInitialized) gpsStatusTv.text = "Location Off"
                 Toast.makeText(this, "Location is disabled. Tap location card to enable.", Toast.LENGTH_LONG).show()
                 cityCountryTv.text = "Location is off. Tap to enable."
                 longLatTv.text = "GPS coordinates unavailable"
@@ -1146,9 +1168,15 @@ class MainActivity : AppCompatActivity(), FoldersActivity.FolderClickListener {
             accuracyTextView.text = "±${String.format(Locale.US, "%.1f", location.accuracy)} m"
             accuracyTextView.visibility = View.VISIBLE
             accuracyIcon.visibility = View.VISIBLE
+            if (::gpsStatusTv.isInitialized) {
+                gpsStatusTv.text = "GPS Active ±${location.accuracy.toInt()}m"
+            }
         } else {
             accuracyTextView.visibility = View.GONE
             accuracyIcon.visibility = View.GONE
+            if (::gpsStatusTv.isInitialized) {
+                gpsStatusTv.text = "GPS Active"
+            }
         }
 
         // Hide unused placeholders so they never display "Lat/Long" dummy text
