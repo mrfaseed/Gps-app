@@ -33,6 +33,10 @@
         <activity android:name=".TemplateActivity"
             android:exported="true"/>
         <activity
+            android:name=".SettingsActivity"
+            android:exported="false"
+            android:theme="@style/Theme.GPSMapCameraApp.Settings"/>
+        <activity
             android:name=".MainActivity"
             android:exported="true">
             <intent-filter>

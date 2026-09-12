@@ -86,10 +86,17 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
+        <!-- Spacer pushing controls to the right side -->
+        <View
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1" />
+
         <!-- Flash Button -->
         <FrameLayout
             android:layout_width="40dp"
             android:layout_height="40dp"
+            android:layout_marginEnd="10dp"
             android:background="@drawable/bg_circle_glass">
 
             <ImageView
@@ -110,11 +117,21 @@
                 app:tint="@color/white" />
         </FrameLayout>
 
-        <!-- Spacer -->
-        <View
-            android:layout_width="0dp"
-            android:layout_height="1dp"
-            android:layout_weight="1" />
+        <!-- Quick Options Button -->
+        <FrameLayout
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginEnd="10dp"
+            android:background="@drawable/bg_circle_glass">
+
+            <ImageView
+                android:id="@+id/options_icon_main_activity"
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:layout_gravity="center"
+                android:src="@drawable/options_icon_main_activity"
+                app:tint="@color/white" />
+        </FrameLayout>
 
         <!-- Settings Button -->
         <FrameLayout
@@ -131,27 +148,6 @@
                 android:layout_height="22dp"
                 android:layout_gravity="center"
                 android:src="@drawable/settings_icon_main_activity"
-                app:tint="@color/white" />
-        </FrameLayout>
-
-        <!-- Spacer -->
-        <View
-            android:layout_width="0dp"
-            android:layout_height="1dp"
-            android:layout_weight="1" />
-
-        <!-- Settings / Options Button -->
-        <FrameLayout
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:background="@drawable/bg_circle_glass">
-
-            <ImageView
-                android:id="@+id/options_icon_main_activity"
-                android:layout_width="22dp"
-                android:layout_height="22dp"
-                android:layout_gravity="center"
-                android:src="@drawable/options_icon_main_activity"
                 app:tint="@color/white" />
         </FrameLayout>
 

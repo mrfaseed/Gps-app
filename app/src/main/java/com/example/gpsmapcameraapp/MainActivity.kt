@@ -239,8 +239,9 @@ class MainActivity : AppCompatActivity(), FoldersActivity.FolderClickListener {
         locationDetailsCard.setCardBackgroundColor(Color.TRANSPARENT)
         settingsButton = findViewById<View>(R.id.settings_button_main)
         settingsButton.setOnClickListener {
-            // Setting button placeholder - will be configured later
-            Toast.makeText(this, "Settings", Toast.LENGTH_SHORT).show()
+            val intent = Intent(this, SettingsActivity::class.java)
+            startActivity(intent)
+            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
         }
 
         sharedPreferences = getSharedPreferences(PREF_NAME_MANUAL, Context.MODE_PRIVATE)
@@ -1315,6 +1316,7 @@ class MainActivity : AppCompatActivity(), FoldersActivity.FolderClickListener {
         cameraIcon.setImageResource(R.drawable.camera_change_icon_main_activity)
         flashLightIcon.setImageResource(R.drawable.flash_light_icon_main_activity)
         restoreTimerState()
+        restoreSoundState()
         updateCollectionThumbnail()
         val availability = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(this)
         if (availability != ConnectionResult.SUCCESS) {
