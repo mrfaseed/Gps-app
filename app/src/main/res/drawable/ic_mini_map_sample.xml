@@ -1,0 +1,36 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="80dp"
+    android:height="80dp"
+    android:viewportWidth="80"
+    android:viewportHeight="80">
+  <!-- Map Base -->
+  <path
+      android:fillColor="#E6EBEF"
+      android:pathData="M0,0h80v80h-80z"/>
+  <!-- Green Park Area -->
+  <path
+      android:fillColor="#C8E6C9"
+      android:pathData="M15,20h30v25h-30z"/>
+  <!-- Streets -->
+  <path
+      android:strokeColor="#FFFFFF"
+      android:strokeWidth="4"
+      android:pathData="M0,35h80M45,0v80M0,60h80M20,0v80"/>
+  <!-- Road Details -->
+  <path
+      android:strokeColor="#FFECB3"
+      android:strokeWidth="2.5"
+      android:pathData="M0,35h80M45,0v80"/>
+  <!-- Red Pin Shadow -->
+  <path
+      android:fillColor="#4D000000"
+      android:pathData="M45,46m-4,0a4,2 0 1,0 8,0a4,2 0 1,0 -8,0"/>
+  <!-- Red Location Pin -->
+  <path
+      android:fillColor="#E53935"
+      android:pathData="M45,30c-4.4,0 -8,3.6 -8,8c0,5.8 8,14 8,14s8,-8.2 8,-14c0,-4.4 -3.6,-8 -8,-8zm0,11a3,3 0 1,1 0,-6a3,3 0 0,1 0,6z"/>
+  <!-- Center White Dot in Pin -->
+  <path
+      android:fillColor="#FFFFFF"
+      android:pathData="M45,38m-2,0a2,2 0 1,0 4,0a2,2 0 1,0 -4,0"/>
+</vector>

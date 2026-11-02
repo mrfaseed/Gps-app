@@ -4,184 +4,594 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#121212">
+    android:background="#0D1015">
 
-    <ImageView
-        android:id="@+id/back_icon_1"
-        android:layout_width="@dimen/_17sdp"
-        android:layout_height="@dimen/_17sdp"
-        android:src="@drawable/back_icon"
-        app:tint="@color/white"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.04"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.07999998" />
+    <!-- Scrollable Body Content -->
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/scroll_view_folders"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:fillViewport="true"
+        app:layout_constraintBottom_toTopOf="@+id/bottom_cta_container"
+        app:layout_constraintTop_toTopOf="parent">
 
-    <TextView
-        android:id="@+id/select_folder_tv"
-        android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="20dp"
+            android:paddingTop="20dp"
+            android:paddingEnd="20dp"
+            android:paddingBottom="24dp">
+
+            <!-- Top Header Bar (Back button + GPS FIELD APP branding) -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <ImageView
+                    android:id="@+id/back_icon_1"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:layout_alignParentStart="true"
+                    android:layout_centerVertical="true"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Back"
+                    android:padding="6dp"
+                    android:src="@drawable/ic_ios_back"
+                    app:tint="@color/white" />
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_marginEnd="6dp"
+                        android:contentDescription="GPS Pin"
+                        android:src="@drawable/ic_pin_amber" />
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="GPS"
+                            android:textColor="#FFFFFF"
+                            android:textSize="11sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:letterSpacing="0.04"
+                            android:text="FIELD APP"
+                            android:textColor="#8B949E"
+                            android:textSize="8.5sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+                </LinearLayout>
+            </RelativeLayout>
+
+            <!-- Screen Title & Subtitle -->
+            <TextView
+                android:id="@+id/select_folder_tv"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="22dp"
+                android:text="Photo Storage"
+                android:textColor="@color/white"
+                android:textSize="26sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:lineSpacingExtra="2dp"
+                android:text="Select a folder where captured GPS photos will be saved."
+                android:textColor="#8B949E"
+                android:textSize="13.5sp" />
+
+            <!-- "Save Original Photos" Card -->
+            <LinearLayout
+                android:id="@+id/card_save_original"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="22dp"
+                android:background="@drawable/bg_folder_card_normal"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingStart="16dp"
+                android:paddingTop="16dp"
+                android:paddingEnd="16dp"
+                android:paddingBottom="16dp">
+
+                <ImageView
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:layout_marginEnd="14dp"
+                    android:contentDescription="Camera Icon"
+                    android:src="@drawable/ic_camera_outline" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/save_original_photos_tv"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/save_original_photos"
+                        android:textColor="@color/white"
+                        android:textSize="14.5sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="3dp"
+                        android:lineSpacingExtra="1.5dp"
+                        android:text="Keep the original camera image alongside the processed photo."
+                        android:textColor="#8B949E"
+                        android:textSize="11.5sp" />
+                </LinearLayout>
+
+                <androidx.appcompat.widget.SwitchCompat
+                    android:id="@+id/switch_folders"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    app:thumbTint="@color/white"
+                    app:track="@drawable/switch_track_selector" />
+            </LinearLayout>
+
+            <!-- "FOLDERS" Section Header & Sort Option -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="26dp"
+                android:layout_marginBottom="12dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentStart="true"
+                    android:layout_centerVertical="true"
+                    android:letterSpacing="0.08"
+                    android:text="FOLDERS"
+                    android:textColor="#6E7681"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+
+                <LinearLayout
+                    android:id="@+id/btn_sort_folders"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:padding="4dp">
+
+                    <ImageView
+                        android:layout_width="14dp"
+                        android:layout_height="14dp"
+                        android:layout_marginEnd="6dp"
+                        android:contentDescription="Sort Icon"
+                        android:src="@drawable/ic_sort_filter" />
+
+                    <TextView
+                        android:id="@+id/tv_sort_label"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Recently used"
+                        android:textColor="#8B949E"
+                        android:textSize="12sp" />
+
+                    <ImageView
+                        android:layout_width="10dp"
+                        android:layout_height="10dp"
+                        android:layout_marginStart="5dp"
+                        android:contentDescription="Dropdown"
+                        android:src="@drawable/down_icon"
+                        app:tint="#8B949E" />
+                </LinearLayout>
+            </RelativeLayout>
+
+            <!-- Folder 1: Default (Selected State) -->
+            <LinearLayout
+                android:id="@+id/folders_card_1"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="10dp"
+                android:background="@drawable/bg_folder_card_selected"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:padding="16dp">
+
+                <ImageView
+                    android:id="@+id/folder_icon_1"
+                    android:layout_width="34dp"
+                    android:layout_height="34dp"
+                    android:layout_marginEnd="14dp"
+                    android:contentDescription="Folder Icon"
+                    android:src="@drawable/ic_folder_amber" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/default_2"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Default"
+                        android:textColor="@color/white"
+                        android:textSize="15.5sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:text="App default storage location"
+                        android:textColor="#8B949E"
+                        android:textSize="12sp" />
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="5dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <ImageView
+                            android:layout_width="12dp"
+                            android:layout_height="12dp"
+                            android:layout_marginEnd="4dp"
+                            android:contentDescription="Folder count"
+                            android:src="@drawable/ic_folder_mini" />
+
+                        <TextView
+                            android:id="@+id/tv_default_meta"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="245 photos • Last used today"
+                            android:textColor="#8B949E"
+                            android:textSize="11.5sp" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <FrameLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp">
+
+                    <ImageView
+                        android:id="@+id/check_icon_default"
+                        android:layout_width="26dp"
+                        android:layout_height="26dp"
+                        android:contentDescription="Selected"
+                        android:src="@drawable/ic_check_circle_amber"
+                        android:visibility="visible" />
+
+                    <ImageView
+                        android:id="@+id/chevron_icon_default"
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:contentDescription="Open"
+                        android:src="@drawable/ic_chevron_right"
+                        android:visibility="gone" />
+                </FrameLayout>
+            </LinearLayout>
+
+            <!-- Folder 2: Site 1 -->
+            <LinearLayout
+                android:id="@+id/folders_card_2"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="10dp"
+                android:background="@drawable/bg_folder_card_normal"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:padding="16dp">
+
+                <ImageView
+                    android:id="@+id/folder_icon_2"
+                    android:layout_width="34dp"
+                    android:layout_height="34dp"
+                    android:layout_marginEnd="14dp"
+                    android:contentDescription="Folder Icon"
+                    android:src="@drawable/ic_folder_amber" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/site_1_tv"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Site 1"
+                        android:textColor="@color/white"
+                        android:textSize="15.5sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:text="/GPS Photos/Site 1"
+                        android:textColor="#8B949E"
+                        android:textSize="12sp" />
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="5dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <ImageView
+                            android:layout_width="12dp"
+                            android:layout_height="12dp"
+                            android:layout_marginEnd="4dp"
+                            android:contentDescription="Folder count"
+                            android:src="@drawable/ic_folder_mini" />
+
+                        <TextView
+                            android:id="@+id/tv_site_1_meta"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="124 photos • Last used 2 days ago"
+                            android:textColor="#8B949E"
+                            android:textSize="11.5sp" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <FrameLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp">
+
+                    <ImageView
+                        android:id="@+id/check_icon_site_1"
+                        android:layout_width="26dp"
+                        android:layout_height="26dp"
+                        android:contentDescription="Selected"
+                        android:src="@drawable/ic_check_circle_amber"
+                        android:visibility="gone" />
+
+                    <ImageView
+                        android:id="@+id/chevron_icon_site_1"
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:contentDescription="Open"
+                        android:src="@drawable/ic_chevron_right"
+                        android:visibility="visible" />
+                </FrameLayout>
+            </LinearLayout>
+
+            <!-- Folder 3: Site 2 -->
+            <LinearLayout
+                android:id="@+id/folders_card_3"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="10dp"
+                android:background="@drawable/bg_folder_card_normal"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:padding="16dp">
+
+                <ImageView
+                    android:id="@+id/folder_icon_3"
+                    android:layout_width="34dp"
+                    android:layout_height="34dp"
+                    android:layout_marginEnd="14dp"
+                    android:contentDescription="Folder Icon"
+                    android:src="@drawable/ic_folder_amber" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/site_2_tv"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Site 2"
+                        android:textColor="@color/white"
+                        android:textSize="15.5sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:text="/GPS Photos/Site 2"
+                        android:textColor="#8B949E"
+                        android:textSize="12sp" />
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="5dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <ImageView
+                            android:layout_width="12dp"
+                            android:layout_height="12dp"
+                            android:layout_marginEnd="4dp"
+                            android:contentDescription="Folder count"
+                            android:src="@drawable/ic_folder_mini" />
+
+                        <TextView
+                            android:id="@+id/tv_site_2_meta"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="38 photos • Last used 5 days ago"
+                            android:textColor="#8B949E"
+                            android:textSize="11.5sp" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <FrameLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp">
+
+                    <ImageView
+                        android:id="@+id/check_icon_site_2"
+                        android:layout_width="26dp"
+                        android:layout_height="26dp"
+                        android:contentDescription="Selected"
+                        android:src="@drawable/ic_check_circle_amber"
+                        android:visibility="gone" />
+
+                    <ImageView
+                        android:id="@+id/chevron_icon_site_2"
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:contentDescription="Open"
+                        android:src="@drawable/ic_chevron_right"
+                        android:visibility="visible" />
+                </FrameLayout>
+            </LinearLayout>
+
+            <!-- Action Card: "+ Create New Folder" -->
+            <LinearLayout
+                android:id="@+id/card_create_new_folder"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:background="@drawable/bg_folder_card_normal"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:padding="16dp">
+
+                <ImageView
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:layout_marginStart="6dp"
+                    android:layout_marginEnd="18dp"
+                    android:contentDescription="Plus Icon"
+                    android:src="@drawable/ic_plus_amber" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Create New Folder"
+                    android:textColor="#FFA000"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:contentDescription="Open"
+                    android:src="@drawable/ic_chevron_right" />
+            </LinearLayout>
+
+            <!-- Informational Card: "(i) About Photo Storage" -->
+            <LinearLayout
+                android:id="@+id/card_about_storage"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:layout_marginBottom="16dp"
+                android:background="@drawable/bg_folder_card_normal"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:padding="16dp">
+
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_marginEnd="14dp"
+                    android:contentDescription="Info Icon"
+                    android:src="@drawable/ic_info_circle" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="About Photo Storage"
+                        android:textColor="#E6EDF3"
+                        android:textSize="13.5sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="3dp"
+                        android:lineSpacingExtra="2dp"
+                        android:text="Photos will be saved with GPS location data and timestamp for easy organization."
+                        android:textColor="#8B949E"
+                        android:textSize="11.5sp" />
+                </LinearLayout>
+            </LinearLayout>
+
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+    <!-- Bottom CTA Bar (Sticky "Done" Button) -->
+    <FrameLayout
+        android:id="@+id/bottom_cta_container"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/select_folder"
-        android:textColor="@color/white"
-        android:textSize="@dimen/_11ssp"
-        android:textStyle="bold"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.45"
-        app:layout_constraintStart_toEndOf="@+id/back_icon_1"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.07999998" />
+        android:background="#0D1015"
+        android:paddingStart="20dp"
+        android:paddingTop="12dp"
+        android:paddingEnd="20dp"
+        android:paddingBottom="20dp"
+        app:layout_constraintBottom_toBottomOf="parent">
 
-    <TextView
-        android:id="@+id/save_original_photos_tv"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/save_original_photos"
-        android:textColor="@color/white"
-        android:textSize="@dimen/_9ssp"
-        android:textStyle="bold"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.09"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/back_icon_1"
-        app:layout_constraintVertical_bias="0.060000002" />
-
-    <Switch
-        android:id="@+id/switch_folders"
-        android:layout_width="@dimen/_40sdp"
-        android:layout_height="@dimen/_30sdp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.95"
-        app:layout_constraintStart_toEndOf="@+id/save_original_photos_tv"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.15000003"
-        tools:ignore="UseSwitchCompatOrMaterialXml" />
-
-    <ImageView
-        android:id="@+id/folders_card_1"
-        android:layout_width="@dimen/_250sdp"
-        android:layout_height="@dimen/_40sdp"
-        android:src="@drawable/folders_card"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/select_folder_tv"
-        app:layout_constraintVertical_bias="0.13999999" />
-
-    <ImageView
-        android:id="@+id/folder_icon_1"
-        android:layout_width="@dimen/_30sdp"
-        android:layout_height="@dimen/_30sdp"
-        android:padding="@dimen/_5sdp"
-        android:src="@drawable/folder_icon"
-        app:layout_constraintBottom_toBottomOf="@+id/folders_card_1"
-        app:layout_constraintEnd_toEndOf="@+id/folders_card_1"
-        app:layout_constraintHorizontal_bias="0.07"
-        app:layout_constraintStart_toStartOf="@+id/folders_card_1"
-        app:layout_constraintTop_toTopOf="@+id/folders_card_1" />
-
-    <TextView
-        android:id="@+id/default_2"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/default_2"
-        android:textColor="@color/white"
-        android:textSize="@dimen/_10ssp"
-        android:textStyle="bold"
-        app:layout_constraintBottom_toBottomOf="@+id/folders_card_1"
-        app:layout_constraintEnd_toEndOf="@+id/folders_card_1"
-        app:layout_constraintHorizontal_bias="0.09"
-        app:layout_constraintStart_toEndOf="@+id/folder_icon_1"
-        app:layout_constraintTop_toTopOf="@+id/folders_card_1" />
-
-    <ImageView
-        android:id="@+id/folders_card_2"
-        android:layout_width="@dimen/_250sdp"
-        android:layout_height="@dimen/_40sdp"
-        android:src="@drawable/folders_card"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/folders_card_1"
-        app:layout_constraintVertical_bias="0.01999998" />
-
-    <ImageView
-        android:id="@+id/folder_icon_2"
-        android:layout_width="@dimen/_30sdp"
-        android:layout_height="@dimen/_30sdp"
-        android:padding="@dimen/_5sdp"
-        android:src="@drawable/folder_icon"
-        app:layout_constraintBottom_toBottomOf="@+id/folders_card_2"
-        app:layout_constraintEnd_toEndOf="@+id/folders_card_2"
-        app:layout_constraintHorizontal_bias="0.07"
-        app:layout_constraintStart_toStartOf="@+id/folders_card_2"
-        app:layout_constraintTop_toTopOf="@+id/folders_card_2" />
-
-    <TextView
-        android:id="@+id/site_1_tv"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/site_1"
-        android:textColor="@color/white"
-        android:textSize="@dimen/_10ssp"
-        android:textStyle="bold"
-        app:layout_constraintBottom_toBottomOf="@+id/folders_card_2"
-        app:layout_constraintEnd_toEndOf="@+id/folders_card_2"
-        app:layout_constraintHorizontal_bias="0.09"
-        app:layout_constraintStart_toEndOf="@+id/folder_icon_2"
-        app:layout_constraintTop_toTopOf="@+id/folders_card_2" />
-
-    <ImageView
-        android:id="@+id/folders_card_3"
-        android:layout_width="@dimen/_250sdp"
-        android:layout_height="@dimen/_40sdp"
-        android:src="@drawable/folders_card"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintVertical_bias="0.01999998"
-        app:layout_constraintTop_toBottomOf="@+id/folders_card_2" />
-
-    <ImageView
-        android:id="@+id/folder_icon_3"
-        android:layout_width="@dimen/_30sdp"
-        android:layout_height="@dimen/_30sdp"
-        android:padding="@dimen/_5sdp"
-        android:src="@drawable/folder_icon"
-        app:layout_constraintBottom_toBottomOf="@+id/folders_card_3"
-        app:layout_constraintEnd_toEndOf="@+id/folders_card_3"
-        app:layout_constraintHorizontal_bias="0.07"
-        app:layout_constraintStart_toStartOf="@+id/folders_card_3"
-        app:layout_constraintTop_toTopOf="@+id/folders_card_3" />
-
-    <TextView
-        android:id="@+id/site_2_tv"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/site_2"
-        android:textColor="@color/white"
-        android:textSize="@dimen/_10ssp"
-        android:textStyle="bold"
-        app:layout_constraintBottom_toBottomOf="@+id/folders_card_3"
-        app:layout_constraintEnd_toEndOf="@+id/folders_card_3"
-        app:layout_constraintHorizontal_bias="0.09"
-        app:layout_constraintStart_toEndOf="@+id/folder_icon_3"
-        app:layout_constraintTop_toTopOf="@+id/folders_card_3" />
-
-    <ImageView
-        android:id="@+id/add_more_icon"
-        android:layout_width="@dimen/_40sdp"
-        android:layout_height="@dimen/_40sdp"
-        android:src="@drawable/add_more_icon"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.9"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/folders_card_3"
-        app:layout_constraintVertical_bias="0.85" />
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btn_done"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:background="@drawable/bg_btn_done_orange"
+            android:stateListAnimator="@null"
+            android:text="Done"
+            android:textAllCaps="false"
+            android:textColor="#0D1015"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+    </FrameLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

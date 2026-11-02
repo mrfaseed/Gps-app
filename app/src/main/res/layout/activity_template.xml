@@ -1,340 +1,1162 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#121212">
+    android:background="#0A0E14">
 
-    <ImageView
-        android:id="@+id/back_icon_5"
-        android:layout_width="@dimen/_20sdp"
-        android:layout_height="@dimen/_20sdp"
-        android:src="@drawable/back_icon"
-        app:tint="@color/white"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.05"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.060000002" />
-
-    <TextView
-        android:id="@+id/template_tv"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/template_1"
-        android:textColor="@color/white"
-        android:textSize="@dimen/_14ssp"
-        android:textStyle="bold"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.4"
-        app:layout_constraintStart_toEndOf="@+id/back_icon_5"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.060000002" />
-
-    <ImageView
-        android:id="@+id/template_card"
-        android:layout_width="@dimen/_270sdp"
-        android:layout_height="@dimen/_130sdp"
-        android:src="@drawable/template_card"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/template_tv"
-        app:layout_constraintVertical_bias="0.050000012" />
-
-    <ImageView
-        android:id="@+id/edit_template_icon"
-        android:layout_width="@dimen/_30sdp"
-        android:layout_height="@dimen/_30sdp"
-        android:src="@drawable/edit_template_icon"
-        app:layout_constraintBottom_toBottomOf="@+id/template_card"
-        app:layout_constraintEnd_toEndOf="@+id/template_card"
-        app:layout_constraintHorizontal_bias="0.96"
-        app:layout_constraintStart_toStartOf="@+id/template_card"
-        app:layout_constraintTop_toTopOf="@+id/template_card"
-        app:layout_constraintVertical_bias="1.0" />
-
-    <ImageView
-        android:id="@+id/location_details_template_card"
-        android:layout_width="@dimen/_170sdp"
-        android:layout_height="@dimen/_70sdp"
-        android:src="@drawable/location_details_template_card"
-        app:layout_constraintBottom_toBottomOf="@+id/template_card"
-        app:layout_constraintEnd_toEndOf="@+id/template_card"
-        app:layout_constraintHorizontal_bias="1.0"
-        app:layout_constraintStart_toStartOf="@+id/template_card"
-        app:layout_constraintTop_toBottomOf="@+id/template_tv"
-        app:layout_constraintVertical_bias="0.57" />
-
-    <TextView
-        android:id="@+id/city_country_tv_1"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textColor="@color/white"
-        android:textSize="@dimen/_6ssp"
-        app:layout_constraintBottom_toBottomOf="@+id/location_details_template_card"
-        app:layout_constraintEnd_toEndOf="@+id/location_details_template_card"
-        app:layout_constraintHorizontal_bias="0.41"
-        app:layout_constraintStart_toStartOf="@+id/location_details_template_card"
-        app:layout_constraintTop_toTopOf="@+id/location_details_template_card"
-        app:layout_constraintVertical_bias="0.07999998" />
-
-    <TextView
-        android:id="@+id/long_lat_tv_1"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textColor="@color/white"
-        android:textSize="@dimen/_6ssp"
-        app:layout_constraintBottom_toBottomOf="@+id/location_details_template_card"
-        app:layout_constraintEnd_toEndOf="@+id/location_details_template_card"
-        app:layout_constraintHorizontal_bias="0.34"
-        app:layout_constraintStart_toStartOf="@+id/location_details_template_card"
-        app:layout_constraintTop_toTopOf="@+id/location_details_template_card"
-        app:layout_constraintVertical_bias="0.35000002" />
-
-    <TextView
-        android:id="@+id/plus_code_tv_template_location_details_card"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textColor="@color/white"
-        android:textSize="@dimen/_6ssp"
-        app:layout_constraintBottom_toBottomOf="@+id/location_details_template_card"
-        app:layout_constraintEnd_toEndOf="@+id/location_details_template_card"
-        app:layout_constraintStart_toStartOf="@+id/location_details_template_card"
-        app:layout_constraintTop_toTopOf="@+id/location_details_template_card"
-        app:layout_constraintHorizontal_bias="0.12"
-        app:layout_constraintVertical_bias="0.48000002"
-
-        />
-
-    <ImageView
-        android:id="@+id/cloudy_icon"
-        android:layout_width="@dimen/_10sdp"
-        android:layout_height="@dimen/_10sdp"
-        android:src="@drawable/cloudy_icon"
-        android:visibility="invisible"
-        app:layout_constraintBottom_toBottomOf="@+id/location_details_template_card"
-        app:layout_constraintEnd_toEndOf="@+id/location_details_template_card"
-        app:layout_constraintHorizontal_bias="0.71"
-        app:layout_constraintStart_toStartOf="@+id/location_details_template_card"
-        app:layout_constraintTop_toTopOf="@+id/location_details_template_card"
-        app:layout_constraintVertical_bias="0.48000002"
-
-        />
-
-    <TextView
-        android:id="@+id/weather_tv_template_card"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textSize="@dimen/_6ssp"
-        android:textColor="@color/white"
-        app:layout_constraintBottom_toBottomOf="@+id/location_details_template_card"
-        app:layout_constraintEnd_toEndOf="@+id/location_details_template_card"
-        app:layout_constraintHorizontal_bias="0.85"
-        app:layout_constraintStart_toStartOf="@+id/location_details_template_card"
-        app:layout_constraintTop_toTopOf="@+id/location_details_template_card"
-        app:layout_constraintVertical_bias="0.48000002"
-
-        />
-
-    <TextView
-        android:id="@+id/date_day_time_tv_1"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textColor="@color/white"
-        android:textSize="@dimen/_6ssp"
-        app:layout_constraintBottom_toBottomOf="@+id/location_details_template_card"
-        app:layout_constraintEnd_toEndOf="@+id/location_details_template_card"
-        app:layout_constraintHorizontal_bias="0.20"
-        app:layout_constraintStart_toStartOf="@+id/location_details_template_card"
-        app:layout_constraintTop_toTopOf="@+id/location_details_template_card"
-        app:layout_constraintVertical_bias="0.62" />
-
-    <TextView
-        android:id="@+id/time_zone_tv_template"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textColor="@color/white"
-        android:textSize="@dimen/_6ssp"
-        app:layout_constraintBottom_toBottomOf="@+id/location_details_template_card"
-        app:layout_constraintEnd_toEndOf="@+id/location_details_template_card"
-        app:layout_constraintHorizontal_bias="0.8"
-        app:layout_constraintStart_toStartOf="@+id/location_details_template_card"
-        app:layout_constraintTop_toTopOf="@+id/location_details_template_card"
-        app:layout_constraintVertical_bias="0.62" />
-
-
-    <TextView
-        android:id="@+id/captured_by_tv_1"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/captured_by_gps_map_camera_app"
-        android:textColor="@color/white"
-        android:textSize="@dimen/_6ssp"
-        app:layout_constraintBottom_toBottomOf="@+id/location_details_template_card"
-        app:layout_constraintEnd_toEndOf="@+id/location_details_template_card"
-        app:layout_constraintHorizontal_bias="0.25"
-        app:layout_constraintStart_toStartOf="@+id/location_details_template_card"
-        app:layout_constraintTop_toTopOf="@+id/location_details_template_card"
-        app:layout_constraintVertical_bias="0.9" />
-
-    <ImageView
-        android:id="@+id/wind_icon"
-        android:layout_width="@dimen/_10sdp"
-        android:layout_height="@dimen/_10sdp"
-        android:src="@drawable/wind_icon"
-        app:layout_constraintBottom_toBottomOf="@+id/location_details_template_card"
-        app:layout_constraintEnd_toEndOf="@+id/location_details_template_card"
-        app:layout_constraintHorizontal_bias="0.09"
-        app:layout_constraintStart_toStartOf="@+id/location_details_template_card"
-        app:layout_constraintTop_toTopOf="@+id/location_details_template_card"
-        app:layout_constraintVertical_bias="0.75" />
-
-    <ImageView
-        android:id="@+id/humidity_icon"
-        android:layout_width="@dimen/_10sdp"
-        android:layout_height="@dimen/_10sdp"
-        android:src="@drawable/humidity_icon"
-        app:layout_constraintBottom_toBottomOf="@+id/location_details_template_card"
-        app:layout_constraintEnd_toEndOf="@+id/location_details_template_card"
-        app:layout_constraintHorizontal_bias="0.3"
-        app:layout_constraintStart_toStartOf="@+id/location_details_template_card"
-        app:layout_constraintTop_toTopOf="@+id/location_details_template_card"
-        app:layout_constraintVertical_bias="0.75" />
-
-    <TextView
-        android:id="@+id/humidity_tv_template"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/humidity_tv_template"
-        android:textColor="@color/white"
-        android:textSize="@dimen/_6ssp"
-        app:layout_constraintBottom_toBottomOf="@+id/location_details_template_card"
-        app:layout_constraintEnd_toEndOf="@+id/location_details_template_card"
-        app:layout_constraintHorizontal_bias="0.35"
-        app:layout_constraintStart_toStartOf="@+id/location_details_template_card"
-        app:layout_constraintTop_toTopOf="@+id/location_details_template_card"
-        app:layout_constraintVertical_bias="0.75" />
-
-
-    <ImageView
-        android:id="@+id/pressure_icon"
-        android:layout_width="@dimen/_10sdp"
-        android:layout_height="@dimen/_10sdp"
-        android:src="@drawable/pressure_icon"
-        app:layout_constraintBottom_toBottomOf="@+id/location_details_template_card"
-        app:layout_constraintEnd_toEndOf="@+id/location_details_template_card"
-        app:layout_constraintHorizontal_bias="0.47"
-        app:layout_constraintStart_toStartOf="@+id/location_details_template_card"
-        app:layout_constraintTop_toTopOf="@+id/location_details_template_card"
-        app:layout_constraintVertical_bias="0.75" />
-
-    <TextView
-        android:id="@+id/pressure_tv_template"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textColor="@color/white"
-        android:textSize="@dimen/_6ssp"
-        app:layout_constraintBottom_toBottomOf="@+id/location_details_template_card"
-        app:layout_constraintEnd_toEndOf="@+id/location_details_template_card"
-        app:layout_constraintHorizontal_bias="0.55"
-        app:layout_constraintStart_toStartOf="@+id/location_details_template_card"
-        app:layout_constraintTop_toTopOf="@+id/location_details_template_card"
-        app:layout_constraintVertical_bias="0.75" />
-
-    <ImageView
-        android:id="@+id/altitude_icon"
-        android:layout_width="@dimen/_10sdp"
-        android:layout_height="@dimen/_10sdp"
-        android:src="@drawable/altitude_icon"
-        app:layout_constraintBottom_toBottomOf="@+id/location_details_template_card"
-        app:layout_constraintEnd_toEndOf="@+id/location_details_template_card"
-        app:layout_constraintHorizontal_bias="0.64"
-        app:layout_constraintStart_toStartOf="@+id/location_details_template_card"
-        app:layout_constraintTop_toTopOf="@+id/location_details_template_card"
-        app:layout_constraintVertical_bias="0.75" />
-
-    <TextView
-        android:id="@+id/altitude_tv_template"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textColor="@color/white"
-        android:textSize="@dimen/_6ssp"
-        app:layout_constraintBottom_toBottomOf="@+id/location_details_template_card"
-        app:layout_constraintEnd_toEndOf="@+id/location_details_template_card"
-        app:layout_constraintHorizontal_bias="0.75"
-        app:layout_constraintStart_toStartOf="@+id/location_details_template_card"
-        app:layout_constraintTop_toTopOf="@+id/location_details_template_card"
-        app:layout_constraintVertical_bias="0.75" />
-
-    <ImageView
-        android:id="@+id/accuracy_icon"
-        android:layout_width="@dimen/_10sdp"
-        android:layout_height="@dimen/_10sdp"
-        android:src="@drawable/accuracy_icon"
-        app:layout_constraintBottom_toBottomOf="@+id/location_details_template_card"
-        app:layout_constraintEnd_toEndOf="@+id/location_details_template_card"
-        app:layout_constraintHorizontal_bias="0.78"
-        app:layout_constraintStart_toStartOf="@+id/location_details_template_card"
-        app:layout_constraintTop_toTopOf="@+id/location_details_template_card"
-        app:layout_constraintVertical_bias="0.96" />
-
-    <TextView
-        android:id="@+id/accuracy_tv_template"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textColor="@color/white"
-        android:textSize="@dimen/_6ssp"
-        app:layout_constraintBottom_toBottomOf="@+id/location_details_template_card"
-        app:layout_constraintEnd_toEndOf="@+id/location_details_template_card"
-        app:layout_constraintHorizontal_bias="0.9"
-        app:layout_constraintStart_toStartOf="@+id/location_details_template_card"
-        app:layout_constraintTop_toTopOf="@+id/location_details_template_card"
-        app:layout_constraintVertical_bias="0.95" />
-
-    <TextView
-        android:id="@+id/wind_tv_template"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textColor="@color/white"
-        android:textSize="@dimen/_6ssp"
-        app:layout_constraintBottom_toBottomOf="@+id/location_details_template_card"
-        app:layout_constraintEnd_toEndOf="@+id/location_details_template_card"
-        app:layout_constraintHorizontal_bias="0.19"
-        app:layout_constraintStart_toStartOf="@+id/location_details_template_card"
-        app:layout_constraintTop_toTopOf="@+id/location_details_template_card"
-        app:layout_constraintVertical_bias="0.75" />
-
-    <FrameLayout
-        android:id="@+id/map_container_template"
-        android:layout_width="@dimen/_90sdp"
-        android:layout_height="@dimen/_70sdp"
-        app:layout_constraintBottom_toBottomOf="@+id/template_card"
-        app:layout_constraintEnd_toStartOf="@+id/location_details_template_card"
-        app:layout_constraintStart_toStartOf="@+id/template_card"
-        app:layout_constraintTop_toTopOf="@+id/template_card"
-        app:layout_constraintVertical_bias="0.44">
-
-
-        <fragment
-            android:id="@+id/map_fragment_template"
-            android:name="com.google.android.gms.maps.SupportMapFragment"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent" />
-
-    </FrameLayout>
-
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recycler_view_template"
+    <!-- Top Navigation Header -->
+    <LinearLayout
+        android:id="@+id/template_header_bar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:visibility="invisible"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="16dp"
+        android:paddingTop="16dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="12dp"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <ImageView
+            android:id="@+id/back_icon_5"
+            android:layout_width="38dp"
+            android:layout_height="38dp"
+            android:background="@drawable/bg_circle_glass"
+            android:clickable="true"
+            android:focusable="true"
+            android:padding="9dp"
+            android:src="@drawable/back_icon"
+            app:tint="@color/white" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="14dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/template_tv"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Choose Template"
+                android:textColor="@color/white"
+                android:textSize="19sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="Select how location &amp; stamps appear on photos"
+                android:textColor="#8B949E"
+                android:textSize="11.5sp" />
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <!-- Horizontal Category Filter Chips -->
+    <HorizontalScrollView
+        android:id="@+id/scroll_category_chips"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:clipToPadding="false"
+        android:overScrollMode="never"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="12dp"
+        android:scrollbars="none"
+        app:layout_constraintTop_toBottomOf="@+id/template_header_bar">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/chip_all"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/bg_chip_selected"
+                android:clickable="true"
+                android:focusable="true"
+                android:paddingStart="18dp"
+                android:paddingTop="7dp"
+                android:paddingEnd="18dp"
+                android:paddingBottom="7dp"
+                android:text="All"
+                android:textColor="#FFFFFF"
+                android:textSize="12.5sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/chip_clean"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/bg_chip_unselected"
+                android:clickable="true"
+                android:focusable="true"
+                android:paddingStart="16dp"
+                android:paddingTop="7dp"
+                android:paddingEnd="16dp"
+                android:paddingBottom="7dp"
+                android:text="Clean"
+                android:textColor="#8B949E"
+                android:textSize="12.5sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/chip_map"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/bg_chip_unselected"
+                android:clickable="true"
+                android:focusable="true"
+                android:paddingStart="16dp"
+                android:paddingTop="7dp"
+                android:paddingEnd="16dp"
+                android:paddingBottom="7dp"
+                android:text="Map"
+                android:textColor="#8B949E"
+                android:textSize="12.5sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/chip_detailed"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/bg_chip_unselected"
+                android:clickable="true"
+                android:focusable="true"
+                android:paddingStart="16dp"
+                android:paddingTop="7dp"
+                android:paddingEnd="16dp"
+                android:paddingBottom="7dp"
+                android:text="Detailed"
+                android:textColor="#8B949E"
+                android:textSize="12.5sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/chip_minimal"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_chip_unselected"
+                android:clickable="true"
+                android:focusable="true"
+                android:paddingStart="16dp"
+                android:paddingTop="7dp"
+                android:paddingEnd="16dp"
+                android:paddingBottom="7dp"
+                android:text="Minimal"
+                android:textColor="#8B949E"
+                android:textSize="12.5sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+    </HorizontalScrollView>
+
+    <!-- 2-Column Responsive Template Grid -->
+    <ScrollView
+        android:id="@+id/scroll_templates"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:clipToPadding="false"
+        android:overScrollMode="never"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:paddingBottom="100dp"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/template_card"
-        app:layout_constraintVertical_bias="0.0" />
+        app:layout_constraintTop_toBottomOf="@+id/scroll_category_chips">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- Row 1: Template 1 (Modern Card) & Template 2 (Minimal) -->
+            <LinearLayout
+                android:id="@+id/row_templates_1_2"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:baselineAligned="false"
+                android:orientation="horizontal">
+
+                <!-- 1. MODERN CARD -->
+                <LinearLayout
+                    android:id="@+id/card_template_1"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="5dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_template_grid_card"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:orientation="vertical"
+                    android:padding="7dp">
+
+                    <!-- Photo Container with Rounded Clipping -->
+                    <androidx.cardview.widget.CardView
+                        android:layout_width="match_parent"
+                        android:layout_height="195dp"
+                        app:cardBackgroundColor="#141822"
+                        app:cardCornerRadius="12dp"
+                        app:cardElevation="0dp">
+
+                        <!-- Cached CDN Preview Image -->
+                        <ImageView
+                            android:id="@+id/img_template_bg_1"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:background="@drawable/bg_sample_photo_gradient"
+                            android:contentDescription="Modern Card Preview"
+                            android:scaleType="centerCrop" />
+
+                        <!-- Top Left GeoTag Pill -->
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="top|start"
+                            android:layout_marginStart="7dp"
+                            android:layout_marginTop="7dp"
+                            android:background="@drawable/bg_gps_pill"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:paddingStart="7dp"
+                            android:paddingTop="3.5dp"
+                            android:paddingEnd="8dp"
+                            android:paddingBottom="3.5dp">
+
+                            <ImageView
+                                android:layout_width="11dp"
+                                android:layout_height="11dp"
+                                android:layout_marginEnd="4dp"
+                                android:src="@drawable/ic_camera_outline"
+                                app:tint="@color/white" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="GeoTag"
+                                android:textColor="@color/white"
+                                android:textSize="8.5sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
+                        <!-- Selected Checkmark Badge (Top Right) -->
+                        <FrameLayout
+                            android:id="@+id/check_badge_1"
+                            android:layout_width="22dp"
+                            android:layout_height="22dp"
+                            android:layout_gravity="top|end"
+                            android:layout_margin="6dp"
+                            android:background="@drawable/bg_check_circle_inactive">
+
+                            <ImageView
+                                android:id="@+id/check_icon_1"
+                                android:layout_width="14dp"
+                                android:layout_height="14dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/selected_check_icon"
+                                android:visibility="gone"
+                                app:tint="#FFFFFF" />
+                        </FrameLayout>
+
+                        <!-- Bottom Card Overlay -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="bottom"
+                            android:layout_margin="6dp"
+                            android:background="@drawable/bg_glass_card"
+                            android:orientation="vertical"
+                            android:padding="6dp">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
+
+                                <ImageView
+                                    android:layout_width="28dp"
+                                    android:layout_height="28dp"
+                                    android:background="#161B22"
+                                    android:src="@drawable/ic_mini_map_sample" />
+
+                                <LinearLayout
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="5dp"
+                                    android:layout_weight="1"
+                                    android:orientation="vertical">
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="HXR7+MCV"
+                                        android:textColor="@color/white"
+                                        android:textSize="7.5sp"
+                                        android:textStyle="bold" />
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="Anna Nagar, TN, India"
+                                        android:textColor="#C9D1D9"
+                                        android:textSize="6.5sp" />
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="12.9716° N, 77.5946° E"
+                                        android:textColor="#81D4FA"
+                                        android:textSize="6sp" />
+                                </LinearLayout>
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="📅 12 Sep 2026"
+                                    android:textColor="@color/white"
+                                    android:textSize="6sp" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="4dp"
+                                    android:text="🕒 07:44 PM"
+                                    android:textColor="@color/white"
+                                    android:textSize="6sp" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="4dp"
+                                    android:text="⛰ 14.7 m"
+                                    android:textColor="@color/white"
+                                    android:textSize="6sp" />
+                            </LinearLayout>
+                        </LinearLayout>
+                    </androidx.cardview.widget.CardView>
+
+                    <!-- Title & Subtitle Below Card -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="4dp"
+                        android:layout_marginTop="8dp"
+                        android:text="1. MODERN CARD"
+                        android:textColor="@color/white"
+                        android:textSize="12.5sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="4dp"
+                        android:layout_marginTop="1dp"
+                        android:layout_marginBottom="4dp"
+                        android:text="Clean &amp; Professional"
+                        android:textColor="#8B949E"
+                        android:textSize="10.5sp" />
+                </LinearLayout>
+
+                <!-- 2. MINIMAL -->
+                <LinearLayout
+                    android:id="@+id/card_template_2"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="5dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_template_grid_card"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:orientation="vertical"
+                    android:padding="7dp">
+
+                    <androidx.cardview.widget.CardView
+                        android:layout_width="match_parent"
+                        android:layout_height="195dp"
+                        app:cardBackgroundColor="#141822"
+                        app:cardCornerRadius="12dp"
+                        app:cardElevation="0dp">
+
+                        <!-- Cached CDN Preview Image -->
+                        <ImageView
+                            android:id="@+id/img_template_bg_2"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:background="@drawable/bg_sample_photo_gradient"
+                            android:contentDescription="Minimal Preview"
+                            android:scaleType="centerCrop" />
+
+                        <!-- Top Center Tagline (Italic) -->
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="top|center_horizontal"
+                            android:layout_marginTop="8dp"
+                            android:text="Location Tells the Story"
+                            android:textColor="@color/white"
+                            android:textSize="9.5sp"
+                            android:textStyle="italic" />
+
+                        <!-- Selected Checkmark Badge (Top Right) -->
+                        <FrameLayout
+                            android:id="@+id/check_badge_2"
+                            android:layout_width="22dp"
+                            android:layout_height="22dp"
+                            android:layout_gravity="top|end"
+                            android:layout_margin="6dp"
+                            android:background="@drawable/bg_check_circle_inactive">
+
+                            <ImageView
+                                android:id="@+id/check_icon_2"
+                                android:layout_width="14dp"
+                                android:layout_height="14dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/selected_check_icon"
+                                android:visibility="gone"
+                                app:tint="#FFFFFF" />
+                        </FrameLayout>
+
+                        <!-- Bottom Minimal Overlay -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="bottom"
+                            android:layout_margin="6dp"
+                            android:background="@drawable/bg_glass_card"
+                            android:orientation="vertical"
+                            android:padding="6dp">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
+
+                                <ImageView
+                                    android:layout_width="12dp"
+                                    android:layout_height="12dp"
+                                    android:src="@drawable/pin_location_icon"
+                                    app:tint="#FFA000" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="4dp"
+                                    android:text="HXR7+MCV, MGR Nagar"
+                                    android:textColor="@color/white"
+                                    android:textSize="7.5sp"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="16dp"
+                                android:text="Anna Nagar, Virudhunagar, TN"
+                                android:textColor="#C9D1D9"
+                                android:textSize="6.5sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="16dp"
+                                android:text="Lat 9.5789° N  Long 77.9537° E"
+                                android:textColor="#81D4FA"
+                                android:textSize="6sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="16dp"
+                                android:layout_marginTop="2dp"
+                                android:text="📐 12 Sep 2026 | Sat | 07:44 PM"
+                                android:textColor="@color/white"
+                                android:textSize="6sp" />
+                        </LinearLayout>
+                    </androidx.cardview.widget.CardView>
+
+                    <!-- Title & Subtitle Below Card -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="4dp"
+                        android:layout_marginTop="8dp"
+                        android:text="2. MINIMAL"
+                        android:textColor="@color/white"
+                        android:textSize="12.5sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="4dp"
+                        android:layout_marginTop="1dp"
+                        android:layout_marginBottom="4dp"
+                        android:text="Simple &amp; Elegant"
+                        android:textColor="#8B949E"
+                        android:textSize="10.5sp" />
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <!-- Row 2: Template 3 (Vertical Info) & Template 4 (Map + Info) -->
+            <LinearLayout
+                android:id="@+id/row_templates_3_4"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:baselineAligned="false"
+                android:orientation="horizontal">
+
+                <!-- 3. VERTICAL INFO -->
+                <LinearLayout
+                    android:id="@+id/card_template_3"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="5dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_template_grid_card"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:orientation="vertical"
+                    android:padding="7dp">
+
+                    <androidx.cardview.widget.CardView
+                        android:layout_width="match_parent"
+                        android:layout_height="195dp"
+                        app:cardBackgroundColor="#141822"
+                        app:cardCornerRadius="12dp"
+                        app:cardElevation="0dp">
+
+                        <!-- Cached CDN Preview Image -->
+                        <ImageView
+                            android:id="@+id/img_template_bg_3"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:background="@drawable/bg_sample_photo_gradient"
+                            android:contentDescription="Vertical Info Preview"
+                            android:scaleType="centerCrop" />
+
+                        <!-- Selected Checkmark Badge (Top Left) -->
+                        <FrameLayout
+                            android:id="@+id/check_badge_3"
+                            android:layout_width="22dp"
+                            android:layout_height="22dp"
+                            android:layout_gravity="top|start"
+                            android:layout_margin="6dp"
+                            android:background="@drawable/bg_check_circle_inactive">
+
+                            <ImageView
+                                android:id="@+id/check_icon_3"
+                                android:layout_width="14dp"
+                                android:layout_height="14dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/selected_check_icon"
+                                android:visibility="gone"
+                                app:tint="#FFFFFF" />
+                        </FrameLayout>
+
+                        <!-- Right Vertical Card Overlay -->
+                        <LinearLayout
+                            android:layout_width="85dp"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="end|top"
+                            android:layout_marginTop="6dp"
+                            android:layout_marginEnd="6dp"
+                            android:background="@drawable/bg_glass_card"
+                            android:orientation="vertical"
+                            android:padding="5dp">
+
+                            <LinearLayout
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
+
+                                <ImageView
+                                    android:layout_width="9dp"
+                                    android:layout_height="9dp"
+                                    android:layout_marginEnd="3dp"
+                                    android:src="@drawable/ic_camera_outline"
+                                    app:tint="@color/white" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="GeoTag"
+                                    android:textColor="@color/white"
+                                    android:textSize="7sp"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:text="📅 12 Sep 2026\nSaturday"
+                                android:textColor="@color/white"
+                                android:textSize="5.5sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="3dp"
+                                android:text="🕒 07:44:54 PM"
+                                android:textColor="@color/white"
+                                android:textSize="5.5sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="3dp"
+                                android:text="📍 HXR7+MCV\nAnna Nagar, TN"
+                                android:textColor="#C9D1D9"
+                                android:textSize="5.5sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="3dp"
+                                android:text="🧭 9.5789° N\n77.9537° E"
+                                android:textColor="#81D4FA"
+                                android:textSize="5.5sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="3dp"
+                                android:text="⛰ 14.7 m"
+                                android:textColor="@color/white"
+                                android:textSize="5.5sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:text="Captured with Simatrix GPS"
+                                android:textColor="#8B949E"
+                                android:textSize="4.5sp" />
+                        </LinearLayout>
+                    </androidx.cardview.widget.CardView>
+
+                    <!-- Title & Subtitle Below Card -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="4dp"
+                        android:layout_marginTop="8dp"
+                        android:text="3. VERTICAL INFO"
+                        android:textColor="@color/white"
+                        android:textSize="12.5sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="4dp"
+                        android:layout_marginTop="1dp"
+                        android:layout_marginBottom="4dp"
+                        android:text="Detailed &amp; Organized"
+                        android:textColor="#8B949E"
+                        android:textSize="10.5sp" />
+                </LinearLayout>
+
+                <!-- 4. MAP + INFO -->
+                <LinearLayout
+                    android:id="@+id/card_template_4"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="5dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_template_grid_card"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:orientation="vertical"
+                    android:padding="7dp">
+
+                    <androidx.cardview.widget.CardView
+                        android:layout_width="match_parent"
+                        android:layout_height="195dp"
+                        app:cardBackgroundColor="#141822"
+                        app:cardCornerRadius="12dp"
+                        app:cardElevation="0dp">
+
+                        <!-- Cached CDN Preview Image -->
+                        <ImageView
+                            android:id="@+id/img_template_bg_4"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:background="@drawable/bg_sample_photo_gradient"
+                            android:contentDescription="Map Info Preview"
+                            android:scaleType="centerCrop" />
+
+                        <!-- Top Right GeoTag Pill -->
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="top|end"
+                            android:layout_marginTop="6dp"
+                            android:layout_marginEnd="32dp"
+                            android:background="@drawable/bg_gps_pill"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:paddingStart="6dp"
+                            android:paddingTop="3dp"
+                            android:paddingEnd="7dp"
+                            android:paddingBottom="3dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="GeoTag"
+                                android:textColor="@color/white"
+                                android:textSize="8sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
+                        <!-- Selected Checkmark Badge (Top Right) -->
+                        <FrameLayout
+                            android:id="@+id/check_badge_4"
+                            android:layout_width="22dp"
+                            android:layout_height="22dp"
+                            android:layout_gravity="top|end"
+                            android:layout_margin="6dp"
+                            android:background="@drawable/bg_check_circle_inactive">
+
+                            <ImageView
+                                android:id="@+id/check_icon_4"
+                                android:layout_width="14dp"
+                                android:layout_height="14dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/selected_check_icon"
+                                android:visibility="gone"
+                                app:tint="#FFFFFF" />
+                        </FrameLayout>
+
+                        <!-- Bottom Satellite Map Card Overlay -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="bottom"
+                            android:layout_margin="6dp"
+                            android:background="@drawable/bg_glass_card"
+                            android:orientation="horizontal"
+                            android:padding="5dp">
+
+                            <ImageView
+                                android:layout_width="32dp"
+                                android:layout_height="32dp"
+                                android:background="#161B22"
+                                android:src="@drawable/ic_mini_satellite_sample" />
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="5dp"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="HXR7+MCV, MGR Nagar"
+                                    android:textColor="@color/white"
+                                    android:textSize="7sp"
+                                    android:textStyle="bold" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Anna Nagar, TN"
+                                    android:textColor="#C9D1D9"
+                                    android:textSize="6sp" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="9.5789° N, 77.9537° E"
+                                    android:textColor="#81D4FA"
+                                    android:textSize="5.5sp" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="12 Sep 2026 • 07:44 PM • 14.7 m"
+                                    android:textColor="@color/white"
+                                    android:textSize="5.5sp" />
+                            </LinearLayout>
+                        </LinearLayout>
+                    </androidx.cardview.widget.CardView>
+
+                    <!-- Title & Subtitle Below Card -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="4dp"
+                        android:layout_marginTop="8dp"
+                        android:text="4. MAP + INFO"
+                        android:textColor="@color/white"
+                        android:textSize="12.5sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="4dp"
+                        android:layout_marginTop="1dp"
+                        android:layout_marginBottom="4dp"
+                        android:text="With Satellite Map"
+                        android:textColor="#8B949E"
+                        android:textSize="10.5sp" />
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <!-- Row 3: Template 5 (Clean Overlay) Full Width Wide Card -->
+            <LinearLayout
+                android:id="@+id/card_template_5"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="5dp"
+                android:layout_marginTop="6dp"
+                android:background="@drawable/bg_template_grid_card"
+                android:clickable="true"
+                android:focusable="true"
+                android:orientation="vertical"
+                android:padding="7dp">
+
+                <!-- Photo Container with Rounded Clipping -->
+                <androidx.cardview.widget.CardView
+                    android:layout_width="match_parent"
+                    android:layout_height="160dp"
+                    app:cardBackgroundColor="#141822"
+                    app:cardCornerRadius="12dp"
+                    app:cardElevation="0dp">
+
+                    <!-- Cached CDN Preview Image -->
+                    <ImageView
+                        android:id="@+id/img_template_bg_5"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="@drawable/bg_sample_photo_gradient"
+                        android:contentDescription="Clean Overlay Preview"
+                        android:scaleType="centerCrop" />
+
+                    <!-- Top Right Compass Dial -->
+                    <ImageView
+                        android:layout_width="38dp"
+                        android:layout_height="38dp"
+                        android:layout_gravity="top|end"
+                        android:layout_marginTop="8dp"
+                        android:layout_marginEnd="34dp"
+                        android:src="@drawable/ic_compass_dial" />
+
+                    <!-- Selected Checkmark Badge (Top Right) -->
+                    <FrameLayout
+                        android:id="@+id/check_badge_5"
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:layout_gravity="top|end"
+                        android:layout_margin="6dp"
+                        android:background="@drawable/bg_check_circle_inactive">
+
+                        <ImageView
+                            android:id="@+id/check_icon_5"
+                            android:layout_width="14dp"
+                            android:layout_height="14dp"
+                            android:layout_gravity="center"
+                            android:src="@drawable/selected_check_icon"
+                            android:visibility="gone"
+                            app:tint="#FFFFFF" />
+                    </FrameLayout>
+
+                    <!-- Top Left Date & Time -->
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_margin="12dp"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="12 Sep 2026"
+                            android:textColor="@color/white"
+                            android:textSize="9.5sp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="07:44:54 PM"
+                            android:textColor="@color/white"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Saturday"
+                            android:textColor="#C9D1D9"
+                            android:textSize="8.5sp" />
+                    </LinearLayout>
+
+                    <!-- Bottom Bar: GeoTag + Telemetry -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="bottom"
+                        android:layout_marginStart="12dp"
+                        android:layout_marginEnd="12dp"
+                        android:layout_marginBottom="10dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="GeoTag"
+                            android:textColor="@color/white"
+                            android:textSize="12sp"
+                            android:textStyle="bold|italic" />
+
+                        <View
+                            android:layout_width="0dp"
+                            android:layout_height="1dp"
+                            android:layout_weight="1" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/bg_pill_glass"
+                            android:paddingStart="8dp"
+                            android:paddingTop="3dp"
+                            android:paddingEnd="8dp"
+                            android:paddingBottom="3dp"
+                            android:text="Capture . Locate . Prove"
+                            android:textColor="@color/white"
+                            android:textSize="8sp" />
+                    </LinearLayout>
+                </androidx.cardview.widget.CardView>
+
+                <!-- Title & Subtitle Below Card -->
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:layout_marginEnd="4dp"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="4dp">
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentStart="true"
+                        android:layout_centerVertical="true"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="5. CLEAN OVERLAY"
+                            android:textColor="@color/white"
+                            android:textSize="12.5sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="1dp"
+                            android:text="Date, Time &amp; Compass"
+                            android:textColor="#8B949E"
+                            android:textSize="10.5sp" />
+                    </LinearLayout>
+                </RelativeLayout>
+            </LinearLayout>
+
+            <!-- Row 4: Template 6 (Custom) Full Width Card - Coming Soon & Disabled -->
+            <LinearLayout
+                android:id="@+id/card_template_6"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="5dp"
+                android:layout_marginTop="10dp"
+                android:alpha="0.65"
+                android:background="@drawable/bg_template_grid_card"
+                android:clickable="true"
+                android:focusable="true"
+                android:orientation="vertical"
+                android:padding="7dp">
+
+                <!-- Placeholder Preview Container with Rounded Clipping -->
+                <androidx.cardview.widget.CardView
+                    android:layout_width="match_parent"
+                    android:layout_height="140dp"
+                    app:cardBackgroundColor="#121620"
+                    app:cardCornerRadius="12dp"
+                    app:cardElevation="0dp">
+
+                    <ImageView
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="@drawable/bg_sample_photo_gradient"
+                        android:scaleType="centerCrop" />
+
+                    <!-- Dark semi-transparent tint for disabled feel -->
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="#99090C12" />
+
+                    <!-- Center Custom Template Designer Visual -->
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:gravity="center"
+                        android:orientation="vertical">
+
+                        <ImageView
+                            android:layout_width="44dp"
+                            android:layout_height="44dp"
+                            android:background="@drawable/bg_circle_glass"
+                            android:padding="10dp"
+                            android:src="@drawable/edit_template_icon"
+                            app:tint="#FFD700" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:fontFamily="sans-serif-medium"
+                            android:text="Custom Stamp Builder"
+                            android:textColor="@color/white"
+                            android:textSize="13sp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="Drag, resize &amp; design elements"
+                            android:textColor="#8B949E"
+                            android:textSize="10sp" />
+                    </LinearLayout>
+
+                </androidx.cardview.widget.CardView>
+
+                <!-- Title & Subtitle Below Card with Coming Soon Badge -->
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:layout_marginEnd="4dp"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="4dp">
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentStart="true"
+                        android:layout_centerVertical="true"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="6. CUSTOM"
+                            android:textColor="@color/white"
+                            android:textSize="12.5sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="1dp"
+                            android:text="Design Your Own Stamp"
+                            android:textColor="#8B949E"
+                            android:textSize="10.5sp" />
+                    </LinearLayout>
+
+                    <!-- Coming Soon Gold Pill Badge -->
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true"
+                        android:background="@drawable/bg_badge_coming_soon"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingStart="10dp"
+                        android:paddingTop="5dp"
+                        android:paddingEnd="12dp"
+                        android:paddingBottom="5dp">
+
+                        <ImageView
+                            android:layout_width="13dp"
+                            android:layout_height="13dp"
+                            android:layout_marginEnd="5dp"
+                            android:src="@drawable/ic_crown_gold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Coming Soon"
+                            android:textColor="#FFD700"
+                            android:textSize="10sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+                </RelativeLayout>
+            </LinearLayout>
+
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- Floating Bottom "Apply Template" CTA -->
+    <LinearLayout
+        android:id="@+id/bottom_action_bar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_bottom_deck_gradient"
+        android:gravity="center"
+        android:paddingStart="20dp"
+        android:paddingTop="14dp"
+        android:paddingEnd="20dp"
+        android:paddingBottom="20dp"
+        app:layout_constraintBottom_toBottomOf="parent">
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btn_apply_template"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:background="@drawable/bg_btn_apply_gradient"
+            android:drawableStart="@drawable/ic_btn_check"
+            android:drawablePadding="10dp"
+            android:gravity="center"
+            android:paddingStart="24dp"
+            android:paddingEnd="24dp"
+            android:stateListAnimator="@null"
+            android:text="Apply Modern Card"
+            android:textAllCaps="false"
+            android:textColor="#FFFFFF"
+            android:textSize="15.5sp"
+            android:textStyle="bold" />
+    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/modern_hud_root"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="bottom"
+    android:orientation="horizontal"
+    android:paddingStart="12dp"
+    android:paddingEnd="12dp"
+    android:paddingBottom="0dp">
+
+    <!-- Mini Map Card (Left) -->
+    <FrameLayout
+        android:id="@+id/modern_map_card"
+        android:layout_width="86dp"
+        android:layout_height="86dp">
+
+        <!-- Anti-aliased rounded map image -->
+        <ImageView
+            android:id="@+id/modern_map_image"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="fitXY" />
+
+        <!-- Red Marker Pin (only shown when mapBitmap is null) -->
+        <ImageView
+            android:id="@+id/modern_map_pin"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_gravity="center"
+            android:src="@drawable/ic_stamp_pin"
+            android:visibility="gone"
+            app:tint="#EA4335" />
+
+        <!-- Frosted glass border overlay with 13dp rounded corners -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@drawable/bg_glass_card_stroke" />
+
+    </FrameLayout>
+
+    <!-- Location Details Glass Card (Right) -->
+    <FrameLayout
+        android:id="@+id/modern_details_card"
+        android:layout_width="0dp"
+        android:layout_height="86dp"
+        android:layout_marginStart="8dp"
+        android:layout_weight="1"
+        android:background="@drawable/bg_glass_card">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:paddingStart="10dp"
+            android:paddingTop="5dp"
+            android:paddingEnd="10dp"
+            android:paddingBottom="5dp">
+
+            <!-- City / Address (maxLines 2) -->
+            <TextView
+                android:id="@+id/modern_address_tv"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="2"
+                android:shadowColor="#80000000"
+                android:shadowDx="1"
+                android:shadowDy="1"
+                android:shadowRadius="2"
+                android:textColor="#FFFFFF"
+                android:textSize="10sp"
+                android:textStyle="bold" />
+
+            <!-- Lat / Long Coordinates -->
+            <TextView
+                android:id="@+id/modern_lat_long_tv"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="1.5dp"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:shadowColor="#80000000"
+                android:shadowDx="1"
+                android:shadowDy="1"
+                android:shadowRadius="2"
+                android:textColor="#E0E0E0"
+                android:textSize="8sp" />
+
+            <!-- Telemetry Row (Altitude, Accuracy, Timezone) -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="1.5dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:id="@+id/modern_altitude_icon"
+                    android:layout_width="9dp"
+                    android:layout_height="9dp"
+                    android:src="@drawable/altitude_icon"
+                    app:tint="@color/white" />
+
+                <TextView
+                    android:id="@+id/modern_altitude_tv"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="3dp"
+                    android:textColor="#CCCCCC"
+                    android:textSize="7.5sp" />
+
+                <ImageView
+                    android:id="@+id/modern_accuracy_icon"
+                    android:layout_width="9dp"
+                    android:layout_height="9dp"
+                    android:layout_marginStart="6dp"
+                    android:src="@drawable/accuracy_icon"
+                    app:tint="@color/white" />
+
+                <TextView
+                    android:id="@+id/modern_accuracy_tv"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="3dp"
+                    android:textColor="#CCCCCC"
+                    android:textSize="7.5sp" />
+
+                <TextView
+                    android:id="@+id/modern_timezone_tv"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:textColor="#CCCCCC"
+                    android:textSize="7.5sp" />
+            </LinearLayout>
+
+            <!-- Date & Time -->
+            <TextView
+                android:id="@+id/modern_date_time_tv"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="1.5dp"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:shadowColor="#80000000"
+                android:shadowDx="1"
+                android:shadowDy="1"
+                android:shadowRadius="2"
+                android:textColor="#CCCCCC"
+                android:textSize="7.5sp" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
+
+            <!-- Branding Footer -->
+            <TextView
+                android:id="@+id/modern_branding_tv"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:text="Built by : Simatrix GPS Camera"
+                android:textColor="#88FFFFFF"
+                android:textSize="7sp"
+                android:textStyle="bold" />
+
+        </LinearLayout>
+    </FrameLayout>
+
+</LinearLayout>

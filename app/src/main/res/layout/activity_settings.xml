@@ -234,6 +234,156 @@
                         android:checked="true" />
                 </LinearLayout>
 
+                <!-- Divider -->
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="0.5dp"
+                    android:layout_marginStart="60dp"
+                    android:background="#E5E5EA" />
+
+                <!-- Row: Aspect Ratio -->
+                <LinearLayout
+                    android:id="@+id/row_aspect_ratio"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center_vertical"
+                    android:minHeight="54dp"
+                    android:orientation="horizontal"
+                    android:paddingStart="16dp"
+                    android:paddingTop="10dp"
+                    android:paddingEnd="16dp"
+                    android:paddingBottom="10dp">
+
+                    <FrameLayout
+                        android:layout_width="30dp"
+                        android:layout_height="30dp"
+                        android:background="@drawable/bg_ios_icon_purple">
+
+                        <ImageView
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
+                            android:layout_gravity="center"
+                            android:src="@drawable/ic_aspect_ratio_settings"
+                            app:tint="@color/white" />
+                    </FrameLayout>
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="14dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Aspect Ratio"
+                            android:textColor="#1C1C1E"
+                            android:textSize="15sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Camera framing (1:1, 4:3, 16:9, Full)"
+                            android:textColor="#8E8E93"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/tv_settings_aspect_ratio_value"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="6dp"
+                        android:text="16:9"
+                        android:textColor="#8E8E93"
+                        android:textSize="15sp" />
+
+                    <ImageView
+                        android:layout_width="14dp"
+                        android:layout_height="14dp"
+                        android:src="@drawable/ic_chevron_right"
+                        app:tint="#C7C7CC" />
+                </LinearLayout>
+
+                <!-- Divider -->
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="0.5dp"
+                    android:layout_marginStart="60dp"
+                    android:background="#E5E5EA" />
+
+                <!-- Row: Self-Timer -->
+                <LinearLayout
+                    android:id="@+id/row_camera_timer"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center_vertical"
+                    android:minHeight="54dp"
+                    android:orientation="horizontal"
+                    android:paddingStart="16dp"
+                    android:paddingTop="10dp"
+                    android:paddingEnd="16dp"
+                    android:paddingBottom="10dp">
+
+                    <FrameLayout
+                        android:layout_width="30dp"
+                        android:layout_height="30dp"
+                        android:background="@drawable/bg_ios_icon_green">
+
+                        <ImageView
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
+                            android:layout_gravity="center"
+                            android:src="@drawable/ic_timer_glyph"
+                            app:tint="@color/white" />
+                    </FrameLayout>
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="14dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Self-Timer"
+                            android:textColor="#1C1C1E"
+                            android:textSize="15sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Delay before snapping photo"
+                            android:textColor="#8E8E93"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/tv_settings_timer_value"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="6dp"
+                        android:text="Off"
+                        android:textColor="#8E8E93"
+                        android:textSize="15sp" />
+
+                    <ImageView
+                        android:layout_width="14dp"
+                        android:layout_height="14dp"
+                        android:src="@drawable/ic_chevron_right"
+                        app:tint="#C7C7CC" />
+                </LinearLayout>
+
             </LinearLayout>
 
 
@@ -293,7 +443,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Address &amp; Coordinates"
+                            android:text="Address"
                             android:textColor="#1C1C1E"
                             android:textSize="15sp"
                             android:textStyle="bold" />
@@ -301,7 +451,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Reverse geocoded location on photos"
+                            android:text="Show street and city on photos"
                             android:textColor="#8E8E93"
                             android:textSize="12sp" />
                     </LinearLayout>
@@ -355,7 +505,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Mini Map Card"
+                            android:text="Map Preview"
                             android:textColor="#1C1C1E"
                             android:textSize="15sp"
                             android:textStyle="bold" />
@@ -363,7 +513,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Include satellite/normal map inset"
+                            android:text="Show mini map inset on photos"
                             android:textColor="#8E8E93"
                             android:textSize="12sp" />
                     </LinearLayout>
@@ -403,7 +553,7 @@
                             android:layout_width="16dp"
                             android:layout_height="16dp"
                             android:layout_gravity="center"
-                            android:src="@drawable/altitude_icon"
+                            android:src="@drawable/ic_altitude_elevation"
                             app:tint="@color/white" />
                     </FrameLayout>
 
@@ -417,7 +567,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Altitude &amp; Accuracy Badges"
+                            android:text="Altitude &amp; Accuracy"
                             android:textColor="#1C1C1E"
                             android:textSize="15sp"
                             android:textStyle="bold" />
@@ -425,7 +575,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Display elevation and GPS precision"
+                            android:text="Display elevation, coordinates, and accuracy"
                             android:textColor="#8E8E93"
                             android:textSize="12sp" />
                     </LinearLayout>
@@ -469,7 +619,7 @@
                             android:layout_width="16dp"
                             android:layout_height="16dp"
                             android:layout_gravity="center"
-                            android:src="@drawable/edit_template_icon"
+                            android:src="@drawable/ic_watermark_tagline"
                             app:tint="@color/white" />
                     </FrameLayout>
 
@@ -478,7 +628,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginStart="14dp"
                         android:layout_weight="1"
-                        android:text="Stamp Watermark"
+                        android:text="Watermark Text"
                         android:textColor="#1C1C1E"
                         android:textSize="15sp"
                         android:textStyle="bold" />
@@ -567,9 +717,10 @@
                             android:textStyle="bold" />
 
                         <TextView
+                            android:id="@+id/tv_settings_folder_name"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="DCIM / GPS Map Camera App"
+                            android:text="DCIM / Camera"
                             android:textColor="#8E8E93"
                             android:textSize="12sp" />
                     </LinearLayout>
@@ -764,8 +915,12 @@
 
                 <!-- Row: Permissions -->
                 <LinearLayout
+                    android:id="@+id/row_permissions_status"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:background="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true"
                     android:gravity="center_vertical"
                     android:minHeight="48dp"
                     android:orientation="horizontal"
@@ -781,12 +936,19 @@
                         android:textSize="15sp" />
 
                     <TextView
+                        android:id="@+id/tv_permissions_status"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Camera &amp; GPS Granted"
                         android:textColor="#34C759"
                         android:textSize="13sp"
                         android:textStyle="bold" />
+
+                    <ImageView
+                        android:layout_width="16dp"
+                        android:layout_height="16dp"
+                        android:layout_marginStart="6dp"
+                        android:src="@drawable/ic_chevron_right" />
                 </LinearLayout>
 
                 <!-- Divider -->
@@ -822,188 +984,6 @@
                         android:layout_width="16dp"
                         android:layout_height="16dp"
                         android:src="@drawable/ic_chevron_right" />
-                </LinearLayout>
-
-            </LinearLayout>
-
-
-            <!-- ==================================================== -->
-            <!-- SECTION 5: UPCOMING ROADMAP & UPDATES                -->
-            <!-- ==================================================== -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="16dp"
-                android:layout_marginTop="22dp"
-                android:layout_marginBottom="6dp"
-                android:text="FEATURE ROADMAP (READY TO UPDATE)"
-                android:textColor="#6E6E73"
-                android:textSize="12sp"
-                android:textStyle="bold" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="@drawable/bg_ios_card"
-                android:elevation="1dp"
-                android:orientation="vertical">
-
-                <!-- Roadmap 1: Custom Company Logo -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:minHeight="50dp"
-                    android:orientation="horizontal"
-                    android:paddingStart="16dp"
-                    android:paddingTop="10dp"
-                    android:paddingEnd="16dp"
-                    android:paddingBottom="10dp">
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Custom Company Logo Watermark"
-                            android:textColor="#1C1C1E"
-                            android:textSize="14sp"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Upload custom transparent PNG logo to photos"
-                            android:textColor="#8E8E93"
-                            android:textSize="12sp" />
-                    </LinearLayout>
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:background="#E5E5EA"
-                        android:paddingStart="8dp"
-                        android:paddingTop="3dp"
-                        android:paddingEnd="8dp"
-                        android:paddingBottom="3dp"
-                        android:text="Next"
-                        android:textColor="#8E8E93"
-                        android:textSize="11sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
-
-                <!-- Divider -->
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="0.5dp"
-                    android:layout_marginStart="16dp"
-                    android:background="#E5E5EA" />
-
-                <!-- Roadmap 2: PDF Survey Report -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:minHeight="50dp"
-                    android:orientation="horizontal"
-                    android:paddingStart="16dp"
-                    android:paddingTop="10dp"
-                    android:paddingEnd="16dp"
-                    android:paddingBottom="10dp">
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Field Survey PDF Export"
-                            android:textColor="#1C1C1E"
-                            android:textSize="14sp"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Export multi-photo engineering survey reports"
-                            android:textColor="#8E8E93"
-                            android:textSize="12sp" />
-                    </LinearLayout>
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:background="#E5E5EA"
-                        android:paddingStart="8dp"
-                        android:paddingTop="3dp"
-                        android:paddingEnd="8dp"
-                        android:paddingBottom="3dp"
-                        android:text="Next"
-                        android:textColor="#8E8E93"
-                        android:textSize="11sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
-
-                <!-- Divider -->
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="0.5dp"
-                    android:layout_marginStart="16dp"
-                    android:background="#E5E5EA" />
-
-                <!-- Roadmap 3: Compass Azimuth Direction -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:minHeight="50dp"
-                    android:orientation="horizontal"
-                    android:paddingStart="16dp"
-                    android:paddingTop="10dp"
-                    android:paddingEnd="16dp"
-                    android:paddingBottom="10dp">
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Compass &amp; Azimuth Heading"
-                            android:textColor="#1C1C1E"
-                            android:textSize="14sp"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Imprint cardinal compass direction (N, NE, etc.)"
-                            android:textColor="#8E8E93"
-                            android:textSize="12sp" />
-                    </LinearLayout>
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:background="#E5E5EA"
-                        android:paddingStart="8dp"
-                        android:paddingTop="3dp"
-                        android:paddingEnd="8dp"
-                        android:paddingBottom="3dp"
-                        android:text="Next"
-                        android:textColor="#8E8E93"
-                        android:textSize="11sp"
-                        android:textStyle="bold" />
                 </LinearLayout>
 
             </LinearLayout>

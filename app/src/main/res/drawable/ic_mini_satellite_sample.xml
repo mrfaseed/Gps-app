@@ -1,0 +1,26 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="80dp"
+    android:height="80dp"
+    android:viewportWidth="80"
+    android:viewportHeight="80">
+  <!-- Satellite Earth Base -->
+  <path
+      android:fillColor="#1E2A28"
+      android:pathData="M0,0h80v80h-80z"/>
+  <!-- Textured Fields -->
+  <path
+      android:fillColor="#2D3E35"
+      android:pathData="M10,10h35v28h-35zM48,5h28v40h-28zM5,42h38v34h-38z"/>
+  <path
+      android:fillColor="#3A4F42"
+      android:pathData="M20,18h20v15h-20zM50,48h25v28h-25z"/>
+  <!-- Roads -->
+  <path
+      android:strokeColor="#525E5A"
+      android:strokeWidth="1.5"
+      android:pathData="M0,38h80M46,0v80"/>
+  <!-- Red Pin -->
+  <path
+      android:fillColor="#FF3B30"
+      android:pathData="M46,32c-4,0 -7.2,3.2 -7.2,7.2c0,5.2 7.2,12.6 7.2,12.6s7.2,-7.4 7.2,-12.6c0,-4 -3.2,-7.2 -7.2,-7.2zm0,9.9a2.7,2.7 0 1,1 0,-5.4a2.7,2.7 0 0,1 0,5.4z"/>
+</vector>

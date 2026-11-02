@@ -13,27 +13,42 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.Matrix
 import android.graphics.PointF
+import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.constraintlayout.widget.ConstraintSet
 import android.graphics.PorterDuff
 import android.graphics.drawable.ColorDrawable
 import android.location.Address
 import android.location.Geocoder
 import android.location.Location
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
 import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
 import android.os.Handler
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 import android.util.Log
 import android.view.MotionEvent
+import android.view.OrientationEventListener
 import android.view.View
+import android.view.ViewConfiguration
+import android.view.ViewGroup
+import android.view.animation.DecelerateInterpolator
 import android.widget.HorizontalScrollView
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
+import androidx.camera.core.AspectRatio
+import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
@@ -51,6 +66,14 @@ import androidx.lifecycle.ViewModelProvider
 import com.airbnb.lottie.LottieAnimationView
 import com.example.gpsmapcameraapp.focusview.FocusView
 import com.example.gpsmapcameraapp.viewmodels.ImageSavingViewModel
+import com.example.gpsmapcameraapp.models.StampData
+import com.example.gpsmapcameraapp.models.StampTemplate
+import com.example.gpsmapcameraapp.utils.StampRenderer
+import com.example.gpsmapcameraapp.models.AspectRatioMode
+import com.example.gpsmapcameraapp.models.CameraTimerMode
+import android.os.CountDownTimer
+import androidx.transition.TransitionManager
+import com.example.gpsmapcameraapp.fragments.TemplateSelectorBottomSheetDialog
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.GoogleApiAvailability
 import com.google.android.gms.location.FusedLocationProviderClient
@@ -87,9 +110,16 @@ class MainActivity : AppCompatActivity(), FoldersActivity.FolderClickListener {
     private lateinit var flashLightIcon: ImageView
     private lateinit var cameraIcon: ImageView
     private var isBackCameraSelected = true // Flag to track the currently selected camera
+    private var camera: Camera? = null
     private lateinit var optionsIcon: ImageView
     private lateinit var cardView: CardView
     private var isOptionsIconSelected = false
+    private var selectedAspectRatio = AspectRatioMode.RATIO_16_9
+    private var selectedTimer = CameraTimerMode.OFF
+    private lateinit var topRatioTv: TextView
+    private lateinit var btnQuickOptions: View
+    private lateinit var countdownTextView: TextView
+    private var activeCountDownTimer: CountDownTimer? = null
     private lateinit var timerIcon: ImageView
     private lateinit var imageCaptureIcon: ImageView
     private var imageCapture: ImageCapture? = null
@@ -153,6 +183,125 @@ class MainActivity : AppCompatActivity(), FoldersActivity.FolderClickListener {
     private var gpsStatusTv: TextView? = null
     private var gpsStatusDot: ImageView? = null
     private lateinit var settingsButton: View
+    private var selectedTemplate: StampTemplate = StampTemplate.MODERN_CARD
+    private val cameraExecutor: ExecutorService = Executors.newSingleThreadExecutor()
+    private var sensorManager: SensorManager? = null
+    private var rotationSensor: Sensor? = null
+    private var currentCompassAzimuth: Float = 0f
+    private var latestMapBitmap: Bitmap? = null
+
+    private val sensorEventListener = object : SensorEventListener {
+        override fun onSensorChanged(event: SensorEvent?) {
+            if (event == null) return
+            if (event.sensor.type == Sensor.TYPE_ROTATION_VECTOR) {
+                val rotationMatrix = FloatArray(9)
+                SensorManager.getRotationMatrixFromVector(rotationMatrix, event.values)
+                val orientation = FloatArray(3)
+                SensorManager.getOrientation(rotationMatrix, orientation)
+                val azimuthInDeg = Math.toDegrees(orientation[0].toDouble()).toFloat()
+                currentCompassAzimuth = (azimuthInDeg + 360f) % 360f
+                updateLiveCompassDial(currentCompassAzimuth)
+            } else if (event.sensor.type == Sensor.TYPE_ORIENTATION) {
+                currentCompassAzimuth = (event.values[0] + 360f) % 360f
+                updateLiveCompassDial(currentCompassAzimuth)
+            }
+        }
+
+        override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
+    }
+
+    private fun updateLiveCompassDial(azimuth: Float) {
+        if (selectedTemplate == StampTemplate.CLEAN_OVERLAY) {
+            findViewById<ImageView>(R.id.compass_dial_image)?.rotation = -azimuth
+        }
+    }
+
+    private var orientationEventListener: OrientationEventListener? = null
+    private var currentUIRotation: Float = 0f
+
+    private fun setupOrientationEventListener() {
+        orientationEventListener = object : OrientationEventListener(this) {
+            override fun onOrientationChanged(orientation: Int) {
+                if (orientation == ORIENTATION_UNKNOWN) return
+
+                val targetRotation = when {
+                    orientation in 45..134 -> 270f   // Landscape right (phone tilted clockwise)
+                    orientation in 135..224 -> 180f  // Reverse portrait
+                    orientation in 225..314 -> 90f   // Landscape left (phone tilted counter-clockwise)
+                    else -> 0f                       // Normal portrait
+                }
+
+                if (targetRotation != currentUIRotation) {
+                    currentUIRotation = targetRotation
+                    animateControlIconsRotation(targetRotation)
+                }
+            }
+        }
+    }
+
+    private fun animateControlIconsRotation(targetAngle: Float) {
+        val viewsToRotate = listOfNotNull(
+            // Top action bar icons
+            findViewById<View>(R.id.map_data_icon),
+            findViewById<View>(R.id.default_icon),
+            findViewById<View>(R.id.template_icon),
+            findViewById<View>(R.id.flash_light_icon_main_activity),
+            findViewById<View>(R.id.flash_light_on_icon_main_activity),
+            findViewById<View>(R.id.options_icon_main_activity),
+            findViewById<View>(R.id.settings_icon_main_activity),
+            // Options dropdown icons (rotate icons only to keep text clean and prevent overlaps)
+            findViewById<View>(R.id.timer_off_icon),
+            findViewById<View>(R.id.focus_manual_icon),
+            findViewById<View>(R.id.sound_off_icon),
+            findViewById<View>(R.id.white_balance_icon),
+            // Bottom deck controls
+            findViewById<View>(R.id.camera_change_icon_main_activity),
+            findViewById<View>(R.id.collection_icon),
+            findViewById<View>(R.id.template_tv),
+            // Filter scroll view cross & effect icons
+            findViewById<View>(R.id.horizontal_scroll_view_main_cross_icon),
+            findViewById<View>(R.id.auto_effect_icon),
+            findViewById<View>(R.id.manual_effect_icon),
+            findViewById<View>(R.id.incandescent_effect_icon),
+            findViewById<View>(R.id.flourescent_effect_icon),
+            findViewById<View>(R.id.warm_effect_icon),
+            findViewById<View>(R.id.day_light_effect_icon),
+            findViewById<View>(R.id.cloudy_effect_icon),
+            findViewById<View>(R.id.day_light_effect_icon_2),
+            findViewById<View>(R.id.shade_effect_icon)
+        )
+
+        val dropdownTexts = listOfNotNull(
+            findViewById<View>(R.id.timer_off_tv),
+            findViewById<View>(R.id.focus_manual_tv),
+            findViewById<View>(R.id.focus_auto_tv),
+            findViewById<View>(R.id.sound_off_tv),
+            findViewById<View>(R.id.white_balance_tv)
+        )
+        for (tv in dropdownTexts) {
+            tv.rotation = 0f
+        }
+
+        for (view in viewsToRotate) {
+            animateIconToRotation(view, targetAngle)
+        }
+    }
+
+    private fun animateIconToRotation(view: View, targetAngle: Float) {
+        var currentRot = view.rotation % 360f
+        if (currentRot < 0f) currentRot += 360f
+
+        var diff = (targetAngle - currentRot) % 360f
+        if (diff > 180f) diff -= 360f
+        if (diff < -180f) diff += 360f
+
+        val endRotation = view.rotation + diff
+        view.animate()
+            .rotation(endRotation)
+            .setDuration(280)
+            .setInterpolator(DecelerateInterpolator())
+            .start()
+    }
 
 
     @RequiresApi(Build.VERSION_CODES.Q)
@@ -161,29 +310,73 @@ class MainActivity : AppCompatActivity(), FoldersActivity.FolderClickListener {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // Configure edge-to-edge transparent status bar with crisp white system icons
+        // Configure edge-to-edge transparent system bars (status bar & navigation bar)
         WindowCompat.setDecorFitsSystemWindows(window, false)
         window.statusBarColor = Color.TRANSPARENT
+        window.navigationBarColor = Color.TRANSPARENT
         val insetsController = WindowCompat.getInsetsController(window, window.decorView)
         insetsController.isAppearanceLightStatusBars = false
+        insetsController.isAppearanceLightNavigationBars = false
 
-        // Ensure top control bar accommodates transparent status bar insets
-        val topControlsBar = findViewById<View>(R.id.linear_layout_main_activity)
-        ViewCompat.setOnApplyWindowInsetsListener(topControlsBar) { view, insets ->
+        // Ensure top control bar and bottom shutter deck accommodate status bar & navigation bar insets
+        val rootView = findViewById<View>(R.id.root_layout_activity_main)
+        ViewCompat.setOnApplyWindowInsetsListener(rootView) { _, insets ->
             val statusBarHeight = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top
+            val navBarInsets = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
+            val navBarHeight = navBarInsets.bottom
+            val navBarLeft = navBarInsets.left
+            val navBarRight = navBarInsets.right
+
+            // Top control bar padding
+            val topControlsBar = findViewById<View>(R.id.linear_layout_main_activity)
             val padSide = (16 * resources.displayMetrics.density).toInt()
             val padTop = statusBarHeight + (8 * resources.displayMetrics.density).toInt()
             val padBottom = (8 * resources.displayMetrics.density).toInt()
-            view.setPadding(padSide, padTop, padSide, padBottom)
+            topControlsBar?.setPadding(padSide, padTop, padSide, padBottom)
+
+            // Bottom shutter deck sizing & padding (handles 3-button nav and gesture navigation seamlessly)
+            val cardViewMain = findViewById<View>(R.id.card_view_main_activity)
+            val baseDeckHeight = (115 * resources.displayMetrics.density).toInt()
+            val deckParams = cardViewMain?.layoutParams
+            if (deckParams != null && deckParams.height != (baseDeckHeight + navBarHeight)) {
+                deckParams.height = baseDeckHeight + navBarHeight
+                cardViewMain.layoutParams = deckParams
+            }
+            val shutterControls = findViewById<View>(R.id.bottom_shutter_controls)
+            shutterControls?.setPadding(navBarLeft, 0, navBarRight, navBarHeight)
+
+            // Also accommodate navigation bar in effects scroll view
+            val effectsScrollView = findViewById<View>(R.id.horizontal_scroll_view_main)
+            val baseEffectsHeight = (80 * resources.displayMetrics.density).toInt()
+            val effectsParams = effectsScrollView?.layoutParams
+            if (effectsParams != null && effectsParams.height != (baseEffectsHeight + navBarHeight)) {
+                effectsParams.height = baseEffectsHeight + navBarHeight
+                effectsScrollView.layoutParams = effectsParams
+            }
+            effectsScrollView?.setPadding(navBarLeft, 0, navBarRight, navBarHeight)
+
             insets
         }
+        ViewCompat.requestApplyInsets(rootView)
+
+        val templatePrefs = getSharedPreferences("TemplatePreferences", Context.MODE_PRIVATE)
+        selectedTemplate = StampTemplate.fromId(templatePrefs.getInt("selected_template_id", 1))
+
+        sensorManager = getSystemService(Context.SENSOR_SERVICE) as? SensorManager
+        rotationSensor = sensorManager?.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
+            ?: sensorManager?.getDefaultSensor(Sensor.TYPE_ORIENTATION)
 
         templateIcon = findViewById(R.id.template_icon)
-        templateIcon.setOnClickListener {
+        val templateTv = findViewById<TextView>(R.id.template_tv)
+        templateTv?.text = selectedTemplate.title
+
+        val openTemplate = View.OnClickListener {
             val intent = Intent(this, TemplateActivity::class.java)
             startActivity(intent)
-            finish()
         }
+        templateIcon.setOnClickListener(openTemplate)
+        findViewById<View>(R.id.template_button)?.setOnClickListener(openTemplate)
+        templateTv?.setOnClickListener(openTemplate)
 
         val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
         cameraProviderFuture.addListener({
@@ -195,6 +388,9 @@ class MainActivity : AppCompatActivity(), FoldersActivity.FolderClickListener {
         flashLightIcon = findViewById(R.id.flash_light_icon_main_activity)
         cameraIcon = findViewById(R.id.camera_change_icon_main_activity)
         optionsIcon = findViewById(R.id.options_icon_main_activity)
+        btnQuickOptions = findViewById(R.id.btn_quick_options)
+        topRatioTv = findViewById(R.id.top_ratio_tv)
+        countdownTextView = findViewById(R.id.countdown_text_view)
         cardView = findViewById(R.id.card_view_options_icon)
         timerIcon = findViewById(R.id.timer_off_icon)
         imageCaptureIcon = findViewById(R.id.image_capture_icon)
@@ -296,6 +492,7 @@ class MainActivity : AppCompatActivity(), FoldersActivity.FolderClickListener {
             startActivity(intent)
         }
         mapDataIcon.setOnClickListener(openMapData)
+        findViewById<View>(R.id.map_data_button)?.setOnClickListener(openMapData)
         findViewById<TextView>(R.id.map_data_tv).setOnClickListener(openMapData)
 
         sharedPreferences = getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
@@ -317,15 +514,8 @@ class MainActivity : AppCompatActivity(), FoldersActivity.FolderClickListener {
             startActivity(intent)
         }
         foldersIcon.setOnClickListener(openFolders)
+        findViewById<View>(R.id.folders_button)?.setOnClickListener(openFolders)
         folderTv.setOnClickListener(openFolders)
-
-        val openTemplate = View.OnClickListener {
-            val intent = Intent(this, TemplateActivity::class.java)
-            startActivity(intent)
-        }
-        templateIcon.setOnClickListener(openTemplate)
-        findViewById<TextView>(R.id.template_tv).setOnClickListener(openTemplate)
-
 
         whiteBalanceIcon.setOnClickListener {
             cardViewMainActivity.visibility = View.INVISIBLE
@@ -617,6 +807,48 @@ class MainActivity : AppCompatActivity(), FoldersActivity.FolderClickListener {
             }
         }
 
+        findViewById<View>(R.id.vertical_info_container)?.let {
+            setupDraggableHUD(it)
+            it.setOnClickListener {
+                if (!isLocationServiceEnabled()) {
+                    promptEnableLocation()
+                } else {
+                    startLocationUpdates()
+                    Toast.makeText(this, "Refreshing location...", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+
+        findViewById<View>(R.id.minimal_info_container)?.let {
+            setupDraggableHUD(it)
+            it.setOnClickListener {
+                if (!isLocationServiceEnabled()) {
+                    promptEnableLocation()
+                } else {
+                    startLocationUpdates()
+                    Toast.makeText(this, "Refreshing location...", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+
+        findViewById<View>(R.id.satellite_details_card_view)?.setOnClickListener {
+            if (!isLocationServiceEnabled()) {
+                promptEnableLocation()
+            } else {
+                startLocationUpdates()
+                Toast.makeText(this, "Refreshing location...", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        findViewById<View>(R.id.compass_overlay_container)?.setOnClickListener {
+            if (!isLocationServiceEnabled()) {
+                promptEnableLocation()
+            } else {
+                startLocationUpdates()
+                Toast.makeText(this, "Refreshing location...", Toast.LENGTH_SHORT).show()
+            }
+        }
+
         cardViewGoogleMap.setOnClickListener {
             if (!isLocationServiceEnabled()) {
                 promptEnableLocation()
@@ -640,6 +872,7 @@ class MainActivity : AppCompatActivity(), FoldersActivity.FolderClickListener {
             startActivity(intent)
         }
         collectionIcon.setOnClickListener(openCollection)
+        findViewById<View>(R.id.gallery_preview_card)?.setOnClickListener(openCollection)
         findViewById<TextView>(R.id.collection_tv).setOnClickListener(openCollection)
 
         flashLightIcon.setOnClickListener {
@@ -662,44 +895,9 @@ class MainActivity : AppCompatActivity(), FoldersActivity.FolderClickListener {
             }
             executeImageCapture()
         }
-        var clickCount = 0
-
-        timerIcon.setOnClickListener {
-            clickCount++
-            when (clickCount % 3) {
-                1 -> {
-                    timerIcon.setImageResource(R.drawable.selected_timer_icon)
-                    timerTv.text = "Timer 3sec"
-                    saveTimerState("Timer 3sec", R.drawable.selected_timer_icon)
-                }
-
-                2 -> {
-                    timerIcon.setImageResource(R.drawable.selected_timer_icon)
-                    timerTv.text = "Timer 5sec"
-                    saveTimerState("Timer 5sec", R.drawable.selected_timer_icon)
-                }
-
-                else -> {
-                    timerIcon.setImageResource(R.drawable.timer_off_icon)
-                    timerTv.text = "Timer Off"
-                    saveTimerState("Timer Off", R.drawable.timer_off_icon)
-                }
-            }
-        }
-
-
-        optionsIcon.setOnClickListener {
-            if (!isOptionsIconSelected) {
-                optionsIcon.setImageResource(R.drawable.options_selected_icon)
-                cardView.visibility = View.VISIBLE
-
-            } else {
-                optionsIcon.setImageResource(R.drawable.options_icon_main_activity)
-                cardView.visibility = View.INVISIBLE
-            }
-            isOptionsIconSelected = !isOptionsIconSelected
-
-        }
+                setupQuickOptionsAndRatioPanel()
+        restoreAspectRatioState()
+        restoreTimerState()
 
 
         val permissions = arrayOf(
@@ -726,6 +924,8 @@ class MainActivity : AppCompatActivity(), FoldersActivity.FolderClickListener {
         } else {
             checkLocationSettingsAndStart()
         }
+        applyTemplateSelection(selectedTemplate, showToast = false)
+        setupOrientationEventListener()
     }
 
 
@@ -766,76 +966,65 @@ class MainActivity : AppCompatActivity(), FoldersActivity.FolderClickListener {
             // Used to bind the lifecycle of cameras to the lifecycle owner
             val cameraProvider: ProcessCameraProvider = cameraProviderFuture.get()
 
-            // Preview
+                        val targetRatio = when (selectedAspectRatio) {
+                AspectRatioMode.RATIO_4_3 -> AspectRatio.RATIO_4_3
+                else -> AspectRatio.RATIO_16_9
+            }
+
             val preview = Preview.Builder()
+                .setTargetAspectRatio(targetRatio)
                 .build()
                 .also {
                     it.setSurfaceProvider(previewView.surfaceProvider)
                 }
 
-            imageCapture = ImageCapture.Builder().build()
+            imageCapture = ImageCapture.Builder()
+                .setTargetAspectRatio(targetRatio)
+                .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
+                .build()
 
-            // Select back camera as a default
-            val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+            // Select camera based on active selection
+            val cameraSelector = if (isBackCameraSelected) {
+                CameraSelector.DEFAULT_BACK_CAMERA
+            } else {
+                CameraSelector.DEFAULT_FRONT_CAMERA
+            }
 
             try {
                 // Unbind use cases before rebinding
                 cameraProvider.unbindAll()
 
-                cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture)
+                camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture)
+                cameraIcon.setImageResource(if (isBackCameraSelected) R.drawable.camera_change_icon_main_activity else R.drawable.front_cam_icon)
 
                 flashLightIcon.setOnClickListener {
-                    val camera = cameraProvider.bindToLifecycle(this, cameraSelector)
-
-                    if (camera.cameraInfo.hasFlashUnit()) {
-                        val cameraControl = camera.cameraControl
-                        val torchState = camera.cameraInfo.torchState.value
-                        val isTorchOn = torchState == TorchState.ON
-
-                        // Check if the back camera is selected before changing the icon
-                        if (isBackCameraSelected) {
-                            if (isTorchOn) {
-                                flashLightIcon.setImageResource(R.drawable.flash_light_icon_main_activity)
-                            } else {
-                                flashLightIcon.setImageResource(R.drawable.flash_on_icon)
-                            }
-
-                            cameraControl.enableTorch(!isTorchOn)
-                        }
-                    }
+                    toggleFlashlight()
                 }
 
                 cameraIcon.setOnClickListener {
                     val newCameraSelector = if (isBackCameraSelected) {
                         CameraSelector.DEFAULT_FRONT_CAMERA
-
                     } else {
                         CameraSelector.DEFAULT_BACK_CAMERA
                     }
 
                     try {
-                        // Unbind all use cases before rebinding with the new camera selector
                         cameraProvider.unbindAll()
 
-                        // Bind use cases to camera with the new camera selector
-                        cameraProvider.bindToLifecycle(
+                        camera = cameraProvider.bindToLifecycle(
                             this,
                             newCameraSelector,
                             preview,
                             imageCapture
                         )
 
+                        isBackCameraSelected = !isBackCameraSelected // Toggle the camera selection flag
+
                         if (!isBackCameraSelected) {
-                            flashLightIcon.setImageResource(R.drawable.flash_light_icon_main_activity)
-                        } else {
                             flashLightIcon.setImageResource(R.drawable.flash_light_icon_main_activity)
                         }
 
-                        isBackCameraSelected =
-                            !isBackCameraSelected // Toggle the camera selection flag
-
                         cameraIcon.animate().rotationBy(180f).setDuration(300).start()
-                        // Update the camera icon based on the selected camera
                         cameraIcon.setImageResource(if (isBackCameraSelected) R.drawable.camera_change_icon_main_activity else R.drawable.front_cam_icon)
                     } catch (exc: Exception) {
                         Log.e(TAG, "Use case binding failed", exc)
@@ -850,121 +1039,70 @@ class MainActivity : AppCompatActivity(), FoldersActivity.FolderClickListener {
     }
 
 
+    private fun triggerShutterFlash() {
+        previewView.foreground = ColorDrawable(Color.argb(160, 255, 255, 255))
+        previewView.postDelayed({
+            previewView.foreground = null
+        }, 60)
+    }
+
     @RequiresApi(Build.VERSION_CODES.Q)
     private fun executeImageCapture() {
         imageCaptureIcon.animate().scaleX(0.88f).scaleY(0.88f).setDuration(80).withEndAction {
             imageCaptureIcon.animate().scaleX(1f).scaleY(1f).setDuration(80).start()
         }.start()
 
-        // Check if the timer is set to 3 seconds
-        when (timerTv.text) {
-            "Timer 3sec" -> {
+                when (selectedTimer) {
+            CameraTimerMode.TIMER_3S -> {
                 threeToOneAnimationView.visibility = View.VISIBLE
                 threeToOneAnimationView.playAnimation()
                 threeToOneAnimationView.addAnimatorListener(object : AnimatorListenerAdapter() {
                     @RequiresApi(Build.VERSION_CODES.Q)
                     override fun onAnimationEnd(animation: Animator) {
-                        // Stop the animation
                         threeToOneAnimationView.clearAnimation()
-
-                        // Play the sound of the camera if sound is on
+                        threeToOneAnimationView.visibility = View.INVISIBLE
                         if (isSoundOn) {
                             playCameraSound()
                         }
-
-                        // Capture the image after stopping the animation
-                        if (sharedPreferences.getBoolean("isDefaultFolderSelected", true)) {
-                            val cardView1 = findViewById<View>(R.id.location_details_card_view)
-                            val cardView2 = findViewById<View>(R.id.map_card_view)
-                            val mapFragment = supportFragmentManager.findFragmentById(R.id.map_fragment) as SupportMapFragment
-                            viewModel.captureAndSaveImageDefault(this@MainActivity, previewView, cardView1, cardView2, mapFragment)
-
-                        } else if (sharedPreferences.getBoolean(
-                                "isSiteOneFolderSelected",
-                                true
-                            )
-                        ) {
-                            val cardView1 = findViewById<View>(R.id.location_details_card_view)
-                            val cardView2 = findViewById<View>(R.id.map_card_view)
-                            val mapFragment = supportFragmentManager.findFragmentById(R.id.map_fragment) as SupportMapFragment
-                            viewModel.captureAndSaveImageSiteOne(this@MainActivity, previewView, cardView1, cardView2, mapFragment)
-                        } else if (sharedPreferences.getBoolean(
-                                "isSiteTwoFolderSelected",
-                                true
-                            )
-                        ) {
-                            val cardView1 = findViewById<View>(R.id.location_details_card_view)
-                            val cardView2 = findViewById<View>(R.id.map_card_view)
-                            val mapFragment = supportFragmentManager.findFragmentById(R.id.map_fragment) as SupportMapFragment
-                            viewModel.captureAndSaveImageSiteTwo(this@MainActivity, previewView, cardView1, cardView2, mapFragment)
-                        } else {
-                            captureImage()
-                        }
+                        triggerShutterFlash()
+                        captureImage()
                     }
                 })
             }
 
-            "Timer 5sec" -> {
+            CameraTimerMode.TIMER_5S -> {
                 fiveToOneAnimationView.visibility = View.VISIBLE
                 fiveToOneAnimationView.playAnimation()
                 fiveToOneAnimationView.addAnimatorListener(object : AnimatorListenerAdapter() {
+                    @RequiresApi(Build.VERSION_CODES.Q)
                     override fun onAnimationEnd(animation: Animator) {
-                        // Stop the animation
                         fiveToOneAnimationView.clearAnimation()
-
-                        // Play the sound of the camera if sound is on
+                        fiveToOneAnimationView.visibility = View.INVISIBLE
                         if (isSoundOn) {
                             playCameraSound()
                         }
-                        if (sharedPreferences.getBoolean("isDefaultFolderSelected", true)) {
-                            val cardView1 = findViewById<View>(R.id.location_details_card_view)
-                            val cardView2 = findViewById<View>(R.id.map_card_view)
-                            val mapFragment = supportFragmentManager.findFragmentById(R.id.map_fragment) as SupportMapFragment
-                            viewModel.captureAndSaveImageDefault(this@MainActivity, previewView, cardView1, cardView2, mapFragment)
-
-                        } else if (sharedPreferences.getBoolean(
-                                "isSiteOneFolderSelected",
-                                true
-                            )
-                        ) {
-                            val cardView1 = findViewById<View>(R.id.location_details_card_view)
-                            val cardView2 = findViewById<View>(R.id.map_card_view)
-                            val mapFragment = supportFragmentManager.findFragmentById(R.id.map_fragment) as SupportMapFragment
-                            viewModel.captureAndSaveImageSiteOne(this@MainActivity, previewView, cardView1, cardView2, mapFragment)
-                        } else if (sharedPreferences.getBoolean(
-                                "isSiteTwoFolderSelected",
-                                true
-                            )
-                        ) { val cardView1 = findViewById<View>(R.id.location_details_card_view)
-                            val cardView2 = findViewById<View>(R.id.map_card_view)
-                            val mapFragment = supportFragmentManager.findFragmentById(R.id.map_fragment) as SupportMapFragment
-
-                            viewModel.captureAndSaveImageSiteTwo(this@MainActivity, previewView, cardView1, cardView2, mapFragment)
-                        } else {
-                            captureImage()
-                        }
+                        triggerShutterFlash()
+                        captureImage()
                     }
                 })
             }
 
-            else -> {
-                // Play the sound of the camera if sound is on
+            CameraTimerMode.TIMER_10S -> {
+                runTenSecondCountdown {
+                    if (isSoundOn) {
+                        playCameraSound()
+                    }
+                    triggerShutterFlash()
+                    captureImage()
+                }
+            }
+
+            CameraTimerMode.OFF -> {
                 if (isSoundOn) {
                     playCameraSound()
                 }
-                val cardView1 = findViewById<View>(R.id.location_details_card_view)
-                val cardView2 = findViewById<View>(R.id.map_card_view)
-                val mapFragment = supportFragmentManager.findFragmentById(R.id.map_fragment) as SupportMapFragment
-                // Capture the image after stopping the animation
-                if (sharedPreferences.getBoolean("isDefaultFolderSelected", true)) {
-                    viewModel.captureAndSaveImageDefault(this@MainActivity, previewView, cardView1, cardView2, mapFragment)
-                } else if (sharedPreferences.getBoolean("isSiteOneFolderSelected", true)) {
-                    viewModel.captureAndSaveImageSiteOne(this@MainActivity, previewView, cardView1, cardView2, mapFragment)
-                } else if (sharedPreferences.getBoolean("isSiteTwoFolderSelected", true)) {
-                    viewModel.captureAndSaveImageSiteTwo(this@MainActivity, previewView, cardView1, cardView2, mapFragment)
-                } else {
-                    captureImage()
-                }
+                triggerShutterFlash()
+                captureImage()
             }
         }
     }
@@ -1201,6 +1339,7 @@ class MainActivity : AppCompatActivity(), FoldersActivity.FolderClickListener {
         windIcon.visibility = View.GONE
         findViewById<TextView>(R.id.pressure_tv_main_template).visibility = View.GONE
         pressureIcon.visibility = View.GONE
+        updateActiveTemplateViews()
 
         val mapFragment = supportFragmentManager.findFragmentById(R.id.map_fragment) as? SupportMapFragment
         mapFragment?.getMapAsync { googleMap ->
@@ -1208,6 +1347,24 @@ class MainActivity : AppCompatActivity(), FoldersActivity.FolderClickListener {
             googleMap.clear()
             googleMap.addMarker(MarkerOptions().position(latLng).title("Current Location"))
             googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 16f))
+            googleMap.setOnMapLoadedCallback {
+                try {
+                    googleMap.snapshot { bmp ->
+                        if (bmp != null) {
+                            latestMapBitmap = bmp
+                        }
+                    }
+                } catch (_: Exception) {}
+            }
+            googleMap.setOnCameraIdleListener {
+                try {
+                    googleMap.snapshot { bmp ->
+                        if (bmp != null) {
+                            latestMapBitmap = bmp
+                        }
+                    }
+                } catch (_: Exception) {}
+            }
         }
     }
 
@@ -1270,25 +1427,23 @@ class MainActivity : AppCompatActivity(), FoldersActivity.FolderClickListener {
         ) {
             startCamera()
         }
-
     }
 
-
     private fun toggleFlashlight() {
-        val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
-        val cameraProvider: ProcessCameraProvider = cameraProviderFuture.get()
-        val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
-        val camera = cameraProvider.bindToLifecycle(this, cameraSelector)
-        if (camera.cameraInfo.hasFlashUnit()) {
-            val cameraControl = camera.cameraControl
-            val torchState = camera.cameraInfo.torchState.value
+        if (!isBackCameraSelected) {
+            Toast.makeText(this, "Flashlight unavailable for front camera", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val cam = camera ?: return
+        if (cam.cameraInfo.hasFlashUnit()) {
+            val cameraControl = cam.cameraControl
+            val torchState = cam.cameraInfo.torchState.value
             val isTorchOn = torchState == TorchState.ON
-
-            // Check if the back camera is selected before changing the icon
-            if (!isBackCameraSelected) {
-                cameraControl.enableTorch(!isTorchOn)
-                flashLightIcon.setImageResource(R.drawable.flash_light_icon_main_activity)
-            }
+            cameraControl.enableTorch(!isTorchOn)
+            flashLightIcon.setImageResource(
+                if (isTorchOn) R.drawable.flash_light_icon_main_activity
+                else R.drawable.flash_on_icon
+            )
         }
     }
 
@@ -1307,13 +1462,37 @@ class MainActivity : AppCompatActivity(), FoldersActivity.FolderClickListener {
         longLatTextView.text = selectedText
     }
 
-    override fun onResume() {
+        override fun onResume() {
         super.onResume()
+        // Reload selected template from TemplatePreferences in real time
+        val templatePrefs = getSharedPreferences("TemplatePreferences", Context.MODE_PRIVATE)
+        val templateId = templatePrefs.getInt("selected_template_id", 1)
+        applyTemplateSelection(StampTemplate.fromId(templateId), showToast = false)
+
+        // Apply Keep Screen On setting
+        val cameraSettings = getSharedPreferences("CameraSettings", Context.MODE_PRIVATE)
+        val keepAwake = cameraSettings.getBoolean("keep_screen_on", true)
+        if (keepAwake) {
+            window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        } else {
+            window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        }
+
+        // Sync aspect ratio & timer from settings
+        val savedRatio = AspectRatioMode.fromLabel(cameraSettings.getString("camera_aspect_ratio", "16:9"))
+        if (savedRatio != selectedAspectRatio) {
+            applyAspectRatio(savedRatio, restartCamera = true)
+        }
+        val savedTimer = CameraTimerMode.fromLabel(cameraSettings.getString("camera_timer_mode", "Off"))
+        if (savedTimer != selectedTimer) {
+            applyTimerMode(savedTimer)
+        }
+
         // Retrieve the selected map type from SharedPreferences
         val sharedPreferences = getSharedPreferences("MapPreferences", Context.MODE_PRIVATE)
         val selectedMapType = sharedPreferences.getInt("SelectedMapType", GoogleMap.MAP_TYPE_NORMAL)
         updateMapTypeFromTemplate(selectedMapType)
-        cameraIcon.setImageResource(R.drawable.camera_change_icon_main_activity)
+        cameraIcon.setImageResource(if (isBackCameraSelected) R.drawable.camera_change_icon_main_activity else R.drawable.front_cam_icon)
         flashLightIcon.setImageResource(R.drawable.flash_light_icon_main_activity)
         restoreTimerState()
         restoreSoundState()
@@ -1331,11 +1510,37 @@ class MainActivity : AppCompatActivity(), FoldersActivity.FolderClickListener {
                 promptEnableLocation()
             }
         }
+
+        rotationSensor?.let {
+            sensorManager?.registerListener(sensorEventListener, it, SensorManager.SENSOR_DELAY_UI)
+        }
+        orientationEventListener?.enable()
     }
 
     override fun onPause() {
         super.onPause()
+        orientationEventListener?.disable()
         stopLocationUpdates()
+        sensorManager?.unregisterListener(sensorEventListener)
+    }
+
+        override fun dispatchTouchEvent(ev: MotionEvent?): Boolean {
+        if (ev?.action == MotionEvent.ACTION_DOWN) {
+            val cardView = findViewById<View>(R.id.card_view_options_icon)
+            if (isOptionsIconSelected && cardView != null && cardView.visibility == View.VISIBLE) {
+                val cardRect = android.graphics.Rect()
+                cardView.getGlobalVisibleRect(cardRect)
+                val btnRect = android.graphics.Rect()
+                btnQuickOptions.getGlobalVisibleRect(btnRect)
+                val x = ev.rawX.toInt()
+                val y = ev.rawY.toInt()
+
+                if (!cardRect.contains(x, y) && !btnRect.contains(x, y)) {
+                    closeQuickOptionsCard()
+                }
+            }
+        }
+        return super.dispatchTouchEvent(ev)
     }
 
     private fun updateCollectionThumbnail() {
@@ -1378,120 +1583,253 @@ class MainActivity : AppCompatActivity(), FoldersActivity.FolderClickListener {
 
     override fun onDestroy() {
         super.onDestroy()
+        activeCountDownTimer?.cancel()
         handler.removeCallbacksAndMessages(null)
+        cameraExecutor.shutdown()
+        sensorManager?.unregisterListener(sensorEventListener)
     }
-
-
     @RequiresApi(Build.VERSION_CODES.Q)
     private fun captureImage() {
         val imageCapture = imageCapture ?: return
 
-        // Create a file to save the captured image
+        // 1. Determine destination folder based on user's selected folder in FoldersActivity
+        val folderPrefs = getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
+        val targetDir = if (folderPrefs.getBoolean("isDefaultFolderSelected", true)) {
+            File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM), "Camera")
+        } else if (folderPrefs.getBoolean("isSiteOneFolderSelected", false)) {
+            File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM), "GPS Map Camera App/Site 1")
+        } else if (folderPrefs.getBoolean("isSiteTwoFolderSelected", false)) {
+            File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM), "GPS Map Camera App/Site 2")
+        } else {
+            File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM), "Camera")
+        }
+        if (!targetDir.exists()) {
+            targetDir.mkdirs()
+        }
+
         val photoFile = File(
-            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM),
+            targetDir,
             "IMG_${SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())}.jpg"
         )
 
-        // Create output options object which contains file + metadata
-        val outputOptions = ImageCapture.OutputFileOptions.Builder(photoFile).build()
+        // Save raw capture into private cache directory so Android MediaStore never sees or indexes unstamped photos
+        val tempRawFile = File(cacheDir, "raw_capture_${System.currentTimeMillis()}.jpg")
+        val outputOptions = ImageCapture.OutputFileOptions.Builder(tempRawFile).build()
 
-        if (timerTv.text != "Timer 3sec" && timerTv.text != "Timer 5sec") {
-            progressBarAnimation.visibility = View.VISIBLE
-            progressBarAnimation.playAnimation()
+        // 2. Snapshot telemetry immediately on main thread at the exact moment of shutter press
+        val rawAddress = cityCountryTv.text.toString().trim()
+        val (shortAddress, _) = extractShortAndFullAddress(rawAddress)
+        val fullAddress = rawAddress
+        val latLong = longLatTv.text.toString().trim()
+        val altText = findViewById<TextView>(R.id.altitude_tv_main_template)?.text?.toString()?.ifEmpty { "14.7 m" } ?: "14.7 m"
+        val accText = findViewById<TextView>(R.id.accuracy_tv_template_main)?.text?.toString()?.ifEmpty { "±32.0 m" } ?: "±32.0 m"
+        val dateText = findViewById<TextView>(R.id.date_day_time_tv)?.text?.toString()?.trim()?.ifEmpty {
+            val curD = SimpleDateFormat("dd/MM/yyyy", Locale.US).format(Date())
+            val curDay = SimpleDateFormat("EEEE", Locale.US).format(Date())
+            val curT = SimpleDateFormat("hh:mm:ss a", Locale.US).format(Date())
+            "$curD, $curDay, $curT"
+        } ?: SimpleDateFormat("dd MMM yyyy, EEEE", Locale.US).format(Date())
+        val timeText = SimpleDateFormat("hh:mm:ss a", Locale.US).format(Date())
+        val timezoneText = findViewById<TextView>(R.id.time_zone_tv_main_template)?.text?.toString()?.ifEmpty { "GMT +05:30" } ?: "GMT +05:30"
+        val isBack = isBackCameraSelected
+        val activeTemplate = selectedTemplate
+
+        // Compute relative position of active HUD on screen for 1:1 WYSIWYG printing
+        val activeHudView = when (activeTemplate) {
+            StampTemplate.VERTICAL_INFO -> findViewById<View>(R.id.vertical_info_container)
+            StampTemplate.MINIMAL -> findViewById<View>(R.id.minimal_info_container)
+            StampTemplate.MAP_INFO -> findViewById<View>(R.id.satellite_details_card_view)
+            StampTemplate.CLEAN_OVERLAY -> findViewById<View>(R.id.compass_overlay_container)
+            StampTemplate.MODERN_CARD, StampTemplate.CUSTOM -> findViewById<View>(R.id.location_details_card_view)
         }
 
-        // Capture the image and save it to the specified file
+                val preview = previewView
+        val relStampX: Float?
+        val relStampY: Float?
+
+        if (activeHudView != null && preview.width > 0 && preview.height > 0 && activeHudView.visibility == View.VISIBLE) {
+            val hudLoc = IntArray(2)
+            val prevLoc = IntArray(2)
+            activeHudView.getLocationOnScreen(hudLoc)
+            preview.getLocationOnScreen(prevLoc)
+            val rx = (hudLoc[0] - prevLoc[0]).toFloat() / preview.width.toFloat()
+            val ry = (hudLoc[1] - prevLoc[1]).toFloat() / preview.height.toFloat()
+            relStampX = rx.coerceIn(0f, 1f)
+            relStampY = ry.coerceIn(0f, 1f)
+        } else {
+            relStampX = null
+            relStampY = null
+        }
+
+        val mapFragment = supportFragmentManager.findFragmentById(R.id.map_fragment) as? SupportMapFragment
+        val requiresMap = (activeTemplate == StampTemplate.MODERN_CARD || activeTemplate == StampTemplate.MAP_INFO)
+
+        // Snapshot map immediately on the main thread right when the shutter is pressed
+        if (requiresMap && mapFragment != null) {
+            try {
+                mapFragment.getMapAsync { googleMap ->
+                    googleMap.snapshot { bmp ->
+                        if (bmp != null) {
+                            latestMapBitmap = bmp
+                        }
+                    }
+                }
+            } catch (_: Exception) {}
+        }
+
+        // 3. Trigger capture with background executor: UI never blocks, preview never freezes, zero loading lag
         imageCapture.takePicture(
             outputOptions,
-            ContextCompat.getMainExecutor(this),
+            cameraExecutor,
             object : ImageCapture.OnImageSavedCallback {
                 override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
-                    outputFileResults.savedUri ?: Uri.fromFile(photoFile)
+                    val rawBitmap = BitmapFactory.decodeFile(tempRawFile.absolutePath)
+                    try {
+                        tempRawFile.delete()
+                    } catch (_: Exception) {}
 
-                    // Load the captured image
-                    val capturedBitmap = BitmapFactory.decodeFile(photoFile.absolutePath)
+                    if (rawBitmap == null) {
+                        Log.e(TAG, "Capture failed to decode bitmap from cache: ${tempRawFile.absolutePath}")
+                        return
+                    }
 
-                    // Create a mutable bitmap to combine the captured image and overlay views
-                    val combinedBitmap = Bitmap.createBitmap(capturedBitmap.width, capturedBitmap.height, Bitmap.Config.ARGB_8888)
-                    val canvas = Canvas(combinedBitmap)
-                    canvas.drawBitmap(capturedBitmap, 0f, 0f, null)
+                                        // For front camera (selfie), mirror horizontally so photo matches preview
+                    val orientedBitmap = if (!isBack) {
+                        val matrix = Matrix().apply { preScale(-1f, 1f) }
+                        Bitmap.createBitmap(rawBitmap, 0, 0, rawBitmap.width, rawBitmap.height, matrix, true)
+                    } else {
+                        rawBitmap
+                    }
 
-                    // Define the scale factor and new positions
-                    val scaleFactor = 3.5f
+                    // Crop / frame according to selected aspect ratio
+                    val capturedBitmap = when (selectedAspectRatio) {
+                        AspectRatioMode.RATIO_1_1 -> {
+                            val side = minOf(orientedBitmap.width, orientedBitmap.height)
+                            val cropX = (orientedBitmap.width - side) / 2
+                            val cropY = (orientedBitmap.height - side) / 2
+                            Bitmap.createBitmap(orientedBitmap, cropX, cropY, side, side)
+                        }
+                        AspectRatioMode.RATIO_4_3 -> {
+                            val targetWidth = (orientedBitmap.height * 3) / 4
+                            if (targetWidth <= orientedBitmap.width) {
+                                val cropX = (orientedBitmap.width - targetWidth) / 2
+                                Bitmap.createBitmap(orientedBitmap, cropX, 0, targetWidth, orientedBitmap.height)
+                            } else {
+                                val targetHeight = (orientedBitmap.width * 4) / 3
+                                val cropY = (orientedBitmap.height - targetHeight) / 2
+                                Bitmap.createBitmap(orientedBitmap, 0, cropY, orientedBitmap.width, targetHeight)
+                            }
+                        }
+                        AspectRatioMode.RATIO_16_9 -> {
+                            val targetWidth = (orientedBitmap.height * 9) / 16
+                            if (targetWidth <= orientedBitmap.width) {
+                                val cropX = (orientedBitmap.width - targetWidth) / 2
+                                Bitmap.createBitmap(orientedBitmap, cropX, 0, targetWidth, orientedBitmap.height)
+                            } else {
+                                val targetHeight = (orientedBitmap.width * 16) / 9
+                                val cropY = (orientedBitmap.height - targetHeight) / 2
+                                Bitmap.createBitmap(orientedBitmap, 0, cropY, orientedBitmap.width, targetHeight)
+                            }
+                        }
+                        AspectRatioMode.RATIO_FULL -> {
+                            val screenWidth = resources.displayMetrics.widthPixels
+                            val screenHeight = resources.displayMetrics.heightPixels
+                            val screenRatio = screenHeight.toFloat() / screenWidth.toFloat()
+                            val imageRatio = orientedBitmap.height.toFloat() / orientedBitmap.width.toFloat()
+                            if (screenRatio > imageRatio) {
+                                val targetWidth = (orientedBitmap.height / screenRatio).toInt()
+                                val cropX = ((orientedBitmap.width - targetWidth) / 2).coerceAtLeast(0)
+                                if (targetWidth > 0 && cropX + targetWidth <= orientedBitmap.width) {
+                                    Bitmap.createBitmap(orientedBitmap, cropX, 0, targetWidth, orientedBitmap.height)
+                                } else {
+                                    orientedBitmap
+                                }
+                            } else {
+                                orientedBitmap
+                            }
+                        }
+                    }
 
-                    // Calculate card positions based on the image height and width
-                    val imageHeight = capturedBitmap.height.toFloat()
-                    val imageWidth = capturedBitmap.width.toFloat()
+                    fun finalizeAndSave(mapBitmap: Bitmap?) {
+                        try {
+                            val stampData = StampData(
+                                shortAddress = shortAddress,
+                                fullAddress = fullAddress,
+                                latitude = 0.0,
+                                longitude = 0.0,
+                                latLongText = latLong,
+                                altitudeText = altText,
+                                accuracyText = accText,
+                                dateText = dateText,
+                                timeText = timeText,
+                                timezoneText = timezoneText,
+                                mapBitmap = mapBitmap,
+                                compassAzimuth = currentCompassAzimuth,
+                                relativeStampX = relStampX,
+                                relativeStampY = relStampY
+                            )
 
-                    val cardView1 = findViewById<View>(R.id.location_details_card_view) // replace with your first card view id
-                    val cardView2 = findViewById<View>(R.id.map_card_view) // replace with your second card view id
+                            val finalBitmap = StampRenderer.applyStamp(
+                                context = this@MainActivity,
+                                sourceBitmap = capturedBitmap,
+                                template = activeTemplate,
+                                data = stampData
+                            )
 
-                    // Measure card views to get their dimensions
-                    cardView1.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED)
-                    cardView2.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED)
+                            saveCombinedBitmap(finalBitmap, photoFile)
 
-                    val cardWidth1 = cardView1.measuredWidth * scaleFactor
-                    val cardWidth2 = cardView2.measuredWidth * scaleFactor
-                    val cardHeight = cardView1.measuredHeight * scaleFactor // Assuming both cards have the same height
-
-                    // Calculate horizontal spacing
-                    val spacing = 140f * scaleFactor
-
-                    val totalWidth = cardWidth1 + spacing + cardWidth2
-                    val leftMargin = (imageWidth - totalWidth) / 2
-
-                    val card2Position = PointF(leftMargin, imageHeight - cardHeight - 10f)
-                    val card1Position = PointF(leftMargin + cardWidth2 + spacing, imageHeight - cardHeight - 10f)
-                    // Draw the first card view onto the canvas
-                    drawViewOnCanvas(cardView1, canvas, scaleFactor, card1Position)
-
-                    // Draw the second card view onto the canvas
-                    drawViewOnCanvas(cardView2, canvas, scaleFactor, card2Position)
-
-                    // Draw the map fragment onto the canvas
-                    val mapFragment = supportFragmentManager.findFragmentById(R.id.map_fragment) as SupportMapFragment
-                    mapFragment.getMapAsync { googleMap ->
-                        googleMap.snapshot { mapBitmap ->
-                            if (mapBitmap != null) {
-                                drawMapOnCanvas(mapBitmap, canvas, scaleFactor, card2Position)
-
-                                // Save the combined bitmap to a new file
-                                saveCombinedBitmap(combinedBitmap, photoFile)
-
-                                // Hide the progress bars and animations
-                                progressBarAnimation.visibility = View.INVISIBLE
-                                threeToOneAnimationView.visibility = View.INVISIBLE
-                                fiveToOneAnimationView.visibility = View.INVISIBLE
-
-                                // Display a message indicating that the image has been saved to the gallery
-                                Toast.makeText(
-                                    this@MainActivity,
-                                    "Image saved to gallery",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-
-                                // Broadcast the saved image to the media scanner so it is immediately available in the gallery
+                            runOnUiThread {
                                 val mediaScanIntent = Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE)
                                 mediaScanIntent.data = Uri.fromFile(photoFile)
                                 sendBroadcast(mediaScanIntent)
+                                updateCollectionThumbnail()
+                            }
+                        } catch (e: Exception) {
+                            Log.e(TAG, "Error rendering stamp: ${e.message}", e)
+                            saveCombinedBitmap(capturedBitmap, photoFile)
+                            runOnUiThread {
+                                val mediaScanIntent = Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE)
+                                mediaScanIntent.data = Uri.fromFile(photoFile)
+                                sendBroadcast(mediaScanIntent)
+                                updateCollectionThumbnail()
                             }
                         }
+                    }
+
+                    if (requiresMap && mapFragment != null) {
+                        runOnUiThread {
+                            try {
+                                mapFragment.getMapAsync { googleMap ->
+                                    googleMap.snapshot { mapBitmap ->
+                                        val mapToUse = mapBitmap ?: latestMapBitmap
+                                        cameraExecutor.execute {
+                                            finalizeAndSave(mapToUse)
+                                        }
+                                    }
+                                }
+                            } catch (e: Exception) {
+                                cameraExecutor.execute {
+                                    finalizeAndSave(latestMapBitmap)
+                                }
+                            }
+                        }
+                    } else {
+                        finalizeAndSave(null)
                     }
                 }
 
                 override fun onError(exception: ImageCaptureException) {
-                    progressBarAnimation.visibility = View.INVISIBLE
-                    threeToOneAnimationView.visibility = View.INVISIBLE
-                    fiveToOneAnimationView.visibility = View.INVISIBLE
-                    // Image capture failed, handle error
                     Log.e(TAG, "Image capture failed: ${exception.message}", exception)
-                    Toast.makeText(
-                        this@MainActivity,
-                        "Failed to save image",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    runOnUiThread {
+                        Toast.makeText(
+                            this@MainActivity,
+                            "Failed to save image",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
                 }
-            })
+            }
+        )
     }
 
     private fun drawViewOnCanvas(view: View, canvas: Canvas, scaleFactor: Float, position: PointF) {
@@ -1519,11 +1857,310 @@ class MainActivity : AppCompatActivity(), FoldersActivity.FolderClickListener {
         // Draw the scaled map bitmap onto the main canvas at the specified position
         canvas.drawBitmap(scaledMapBitmap, position.x, position.y, null)
     }
+
     private fun saveCombinedBitmap(bitmap: Bitmap, file: File) {
         val outputStream = FileOutputStream(file)
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream)
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 95, outputStream)
         outputStream.flush()
         outputStream.close()
+    }
+
+    private fun extractShortAndFullAddress(rawText: String): Pair<String, String> {
+        val clean = rawText.trim()
+        if (clean.isBlank() || clean.startsWith("Location is off") || clean.startsWith("Acquiring")) {
+            return Pair("Location Acquired", clean)
+        }
+        if (clean.contains("\n")) {
+            val parts = clean.split("\n", limit = 2)
+            return Pair(parts[0].trim(), parts.getOrNull(1)?.trim() ?: parts[0].trim())
+        }
+        val parts = clean.split(",")
+        return if (parts.size >= 3) {
+            val short = "${parts[0].trim()}, ${parts[1].trim()}"
+            val full = parts.drop(2).joinToString(", ") { it.trim() }
+            Pair(short, full)
+        } else {
+            Pair(clean, clean)
+        }
+    }
+
+    @SuppressLint("ClickableViewAccessibility")
+    private fun setupDraggableHUD(view: View?) {
+        if (view == null) return
+        var dX = 0f
+        var dY = 0f
+        var downRawX = 0f
+        var downRawY = 0f
+        var isDragging = false
+        val touchSlop = ViewConfiguration.get(view.context).scaledTouchSlop
+
+        view.setOnTouchListener { v, event ->
+            val root = findViewById<View>(R.id.root_layout_activity_main) ?: return@setOnTouchListener false
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    dX = v.x - event.rawX
+                    dY = v.y - event.rawY
+                    downRawX = event.rawX
+                    downRawY = event.rawY
+                    isDragging = false
+                    v.bringToFront()
+                    (v.parent as? View)?.invalidate()
+                    v.parent?.requestDisallowInterceptTouchEvent(true)
+                    true
+                }
+                MotionEvent.ACTION_MOVE -> {
+                    val dist = Math.hypot((event.rawX - downRawX).toDouble(), (event.rawY - downRawY).toDouble())
+                    if (dist > touchSlop) {
+                        isDragging = true
+                    }
+                    if (isDragging) {
+                        val maxX = (root.width - v.width).toFloat().coerceAtLeast(0f)
+                        val maxY = (root.height - v.height).toFloat().coerceAtLeast(0f)
+                        v.x = (event.rawX + dX).coerceIn(0f, maxX)
+                        v.y = (event.rawY + dY).coerceIn(0f, maxY)
+                    }
+                    true
+                }
+                MotionEvent.ACTION_UP -> {
+                    v.parent?.requestDisallowInterceptTouchEvent(false)
+                    if (!isDragging) {
+                        v.performClick()
+                    }
+                    true
+                }
+                MotionEvent.ACTION_CANCEL -> {
+                    v.parent?.requestDisallowInterceptTouchEvent(false)
+                    true
+                }
+                else -> false
+            }
+        }
+    }
+
+    private fun updateVerticalCardViews() {
+        val verticalCard = findViewById<View>(R.id.vertical_info_container) ?: return
+
+        val rawAddress = cityCountryTv.text.toString().trim()
+        val (shortAddr, fullAddr) = extractShortAndFullAddress(rawAddress)
+
+        verticalCard.findViewById<TextView>(R.id.vertical_short_address_tv)?.text = shortAddr
+        verticalCard.findViewById<TextView>(R.id.vertical_full_address_tv)?.text = fullAddr
+
+        val latLong = findViewById<TextView>(R.id.long_lat_tv)?.text?.toString() ?: ""
+        verticalCard.findViewById<TextView>(R.id.vertical_lat_long_tv)?.text = latLong.ifEmpty { "Lat -- Long --" }
+
+        val altText = findViewById<TextView>(R.id.altitude_tv_main_template)?.text?.toString()?.ifEmpty { "14.7 m" } ?: "14.7 m"
+        val accText = findViewById<TextView>(R.id.accuracy_tv_template_main)?.text?.toString()?.ifEmpty { "±32.0 m" } ?: "±32.0 m"
+        verticalCard.findViewById<TextView>(R.id.vertical_altitude_tv)?.text = "Alt $altText  |  $accText"
+
+        val dateText = SimpleDateFormat("dd MMM yyyy, EEEE", Locale.US).format(Date())
+        val timeText = SimpleDateFormat("hh:mm:ss a", Locale.US).format(Date())
+        verticalCard.findViewById<TextView>(R.id.vertical_date_tv)?.text = dateText
+        verticalCard.findViewById<TextView>(R.id.vertical_time_tv)?.text = timeText
+    }
+
+    private fun updateMinimalCardViews() {
+        val container = findViewById<View>(R.id.minimal_info_container) ?: return
+        val rawAddress = cityCountryTv.text.toString().trim()
+        val (shortAddr, fullAddr) = extractShortAndFullAddress(rawAddress)
+
+        container.findViewById<TextView>(R.id.minimal_short_address_tv)?.text = shortAddr
+        container.findViewById<TextView>(R.id.minimal_full_address_tv)?.text = fullAddr
+
+        val latLong = findViewById<TextView>(R.id.long_lat_tv)?.text?.toString() ?: ""
+        container.findViewById<TextView>(R.id.minimal_lat_long_tv)?.text = latLong.ifEmpty { "Lat -- Long --" }
+
+        val altText = findViewById<TextView>(R.id.altitude_tv_main_template)?.text?.toString()?.ifEmpty { "14.7 m" } ?: "14.7 m"
+        container.findViewById<TextView>(R.id.minimal_altitude_tv)?.text = "Alt $altText"
+
+        val dateText = SimpleDateFormat("dd MMM yyyy", Locale.US).format(Date())
+        val dayText = SimpleDateFormat("EEEE", Locale.US).format(Date())
+        val timeText = SimpleDateFormat("hh:mm:ss a", Locale.US).format(Date())
+        container.findViewById<TextView>(R.id.minimal_date_tv)?.text = dateText
+        container.findViewById<TextView>(R.id.minimal_day_tv)?.text = dayText
+        container.findViewById<TextView>(R.id.minimal_time_tv)?.text = timeText
+    }
+
+    private fun updateSatelliteCardViews() {
+        val container = findViewById<View>(R.id.satellite_details_card_view) ?: return
+        val rawAddress = cityCountryTv.text.toString().trim()
+        val (shortAddr, fullAddr) = extractShortAndFullAddress(rawAddress)
+
+        container.findViewById<TextView>(R.id.hud_satellite_short_address_tv)?.text = shortAddr
+        container.findViewById<TextView>(R.id.hud_satellite_full_address_tv)?.text = fullAddr
+
+        val latLong = findViewById<TextView>(R.id.long_lat_tv)?.text?.toString() ?: ""
+        container.findViewById<TextView>(R.id.hud_satellite_lat_long_tv)?.text = latLong.ifEmpty { "Lat -- Long --" }
+
+        val altText = findViewById<TextView>(R.id.altitude_tv_main_template)?.text?.toString()?.ifEmpty { "14.7 m" } ?: "14.7 m"
+        val accText = findViewById<TextView>(R.id.accuracy_tv_template_main)?.text?.toString()?.ifEmpty { "±32.0 m" } ?: "±32.0 m"
+        container.findViewById<TextView>(R.id.hud_satellite_altitude_tv)?.text = altText
+        container.findViewById<TextView>(R.id.hud_satellite_accuracy_tv)?.text = accText
+
+        val dateText = SimpleDateFormat("dd/MM/yyyy", Locale.US).format(Date())
+        val timeText = SimpleDateFormat("hh:mm:ss a", Locale.US).format(Date())
+        container.findViewById<TextView>(R.id.hud_satellite_date_tv)?.text = dateText
+        container.findViewById<TextView>(R.id.hud_satellite_time_tv)?.text = timeText
+    }
+
+    private fun updateCompassOverlayViews() {
+        val container = findViewById<View>(R.id.compass_overlay_container) ?: return
+        val rawAddress = cityCountryTv.text.toString().trim()
+        val (shortAddr, fullAddr) = extractShortAndFullAddress(rawAddress)
+
+        container.findViewById<TextView>(R.id.compass_short_address_tv)?.text = shortAddr
+        container.findViewById<TextView>(R.id.compass_full_address_tv)?.text = fullAddr
+
+        val latLong = findViewById<TextView>(R.id.long_lat_tv)?.text?.toString() ?: ""
+        container.findViewById<TextView>(R.id.compass_lat_long_tv)?.text = latLong.ifEmpty { "Lat -- Long --" }
+
+        val altText = findViewById<TextView>(R.id.altitude_tv_main_template)?.text?.toString()?.ifEmpty { "14.7 m" } ?: "14.7 m"
+        val accText = findViewById<TextView>(R.id.accuracy_tv_template_main)?.text?.toString()?.ifEmpty { "±32.0 m" } ?: "±32.0 m"
+        container.findViewById<TextView>(R.id.compass_altitude_tv)?.text = altText
+        container.findViewById<TextView>(R.id.compass_accuracy_tv)?.text = accText
+
+        val dateText = SimpleDateFormat("dd MMM yyyy", Locale.US).format(Date())
+        val dayText = SimpleDateFormat("EEEE", Locale.US).format(Date())
+        val timeText = SimpleDateFormat("hh:mm:ss a", Locale.US).format(Date())
+        container.findViewById<TextView>(R.id.compass_date_tv)?.text = dateText
+        container.findViewById<TextView>(R.id.compass_day_tv)?.text = dayText
+        container.findViewById<TextView>(R.id.compass_time_tv)?.text = timeText
+
+        container.findViewById<ImageView>(R.id.compass_dial_image)?.rotation = -currentCompassAzimuth
+    }
+
+    private fun updateActiveTemplateViews() {
+        when (selectedTemplate) {
+            StampTemplate.MODERN_CARD, StampTemplate.CUSTOM -> {
+                // cityCountryTv and longLatTv are updated directly in location_details_card_view
+            }
+            StampTemplate.MINIMAL -> updateMinimalCardViews()
+            StampTemplate.VERTICAL_INFO -> updateVerticalCardViews()
+            StampTemplate.MAP_INFO -> updateSatelliteCardViews()
+            StampTemplate.CLEAN_OVERLAY -> updateCompassOverlayViews()
+        }
+    }
+
+    fun applyTemplateSelection(template: StampTemplate, showToast: Boolean = false) {
+        selectedTemplate = template
+        findViewById<TextView>(R.id.template_tv)?.text = template.title
+        val templatePrefs = getSharedPreferences("TemplatePreferences", Context.MODE_PRIVATE)
+        templatePrefs.edit().putInt("selected_template_id", template.id).apply()
+
+        val mapCard = findViewById<View>(R.id.map_card_view)
+        val locationDetailsCard = findViewById<View>(R.id.location_details_card_view)
+        val satelliteDetailsCard = findViewById<View>(R.id.satellite_details_card_view)
+        val minimalContainer = findViewById<View>(R.id.minimal_info_container)
+        val verticalContainer = findViewById<View>(R.id.vertical_info_container)
+        val compassContainer = findViewById<View>(R.id.compass_overlay_container)
+
+        val topBadgeLeft = findViewById<View>(R.id.top_geotag_badge_left)
+        val topBadgeRight = findViewById<View>(R.id.top_geotag_badge_right)
+        val topTagline = findViewById<View>(R.id.top_script_tagline)
+
+        val mapFragment = supportFragmentManager.findFragmentById(R.id.map_fragment) as? SupportMapFragment
+
+        // Reset HUD translations to default layout positions if user explicitly chose template
+        if (showToast) {
+            verticalContainer?.translationX = 0f
+            verticalContainer?.translationY = 0f
+            minimalContainer?.translationX = 0f
+            minimalContainer?.translationY = 0f
+        }
+
+        // Reset all HUD containers first
+        topBadgeLeft?.visibility = View.GONE
+        topBadgeRight?.visibility = View.GONE
+        topTagline?.visibility = View.GONE
+
+        mapCard?.visibility = View.GONE
+        locationDetailsCard?.visibility = View.GONE
+        satelliteDetailsCard?.visibility = View.GONE
+        minimalContainer?.visibility = View.GONE
+        verticalContainer?.visibility = View.GONE
+        compassContainer?.visibility = View.GONE
+
+        val satelliteBadge = findViewById<View>(R.id.hud_satellite_badge)
+        satelliteBadge?.visibility = View.GONE
+
+        when (template) {
+            StampTemplate.MODERN_CARD, StampTemplate.CUSTOM -> {
+                topBadgeLeft?.visibility = View.VISIBLE
+                mapCard?.visibility = View.VISIBLE
+                locationDetailsCard?.visibility = View.VISIBLE
+                mapFragment?.getMapAsync { googleMap ->
+                    googleMap.mapType = GoogleMap.MAP_TYPE_NORMAL
+                }
+            }
+            StampTemplate.MINIMAL -> {
+                topTagline?.visibility = View.VISIBLE
+                minimalContainer?.visibility = View.VISIBLE
+                setupDraggableHUD(minimalContainer)
+                updateMinimalCardViews()
+            }
+            StampTemplate.VERTICAL_INFO -> {
+                verticalContainer?.visibility = View.VISIBLE
+                setupDraggableHUD(verticalContainer)
+                updateVerticalCardViews()
+            }
+            StampTemplate.MAP_INFO -> {
+                topBadgeRight?.visibility = View.VISIBLE
+                mapCard?.visibility = View.VISIBLE
+                satelliteBadge?.visibility = View.VISIBLE
+                satelliteDetailsCard?.visibility = View.VISIBLE
+                mapFragment?.getMapAsync { googleMap ->
+                    googleMap.mapType = GoogleMap.MAP_TYPE_SATELLITE
+                }
+                updateSatelliteCardViews()
+            }
+            StampTemplate.CLEAN_OVERLAY -> {
+                compassContainer?.visibility = View.VISIBLE
+                updateCompassOverlayViews()
+            }
+        }
+
+        // Respect StampSettings toggles for live viewfinder HUD
+        val stampPref = getSharedPreferences("StampSettings", Context.MODE_PRIVATE)
+        val showMap = stampPref.getBoolean("stamp_map", true)
+        val showAddress = stampPref.getBoolean("stamp_address", true)
+        val showTelemetry = stampPref.getBoolean("stamp_telemetry", true)
+        val customTagline = stampPref.getString("stamp_tagline", "Simatrix GPS Camera") ?: "Simatrix GPS Camera"
+
+        if (!showMap) {
+            mapCard?.visibility = View.GONE
+            satelliteBadge?.visibility = View.GONE
+        }
+        if (!showAddress) {
+            cityCountryTv?.visibility = View.GONE
+            findViewById<View>(R.id.hud_satellite_short_address_tv)?.visibility = View.GONE
+            findViewById<View>(R.id.hud_satellite_full_address_tv)?.visibility = View.GONE
+            findViewById<View>(R.id.compass_location_block)?.visibility = View.GONE
+        } else {
+            cityCountryTv?.visibility = View.VISIBLE
+            findViewById<View>(R.id.hud_satellite_short_address_tv)?.visibility = View.VISIBLE
+            findViewById<View>(R.id.hud_satellite_full_address_tv)?.visibility = View.VISIBLE
+            findViewById<View>(R.id.compass_location_block)?.visibility = View.VISIBLE
+        }
+
+        if (!showTelemetry) {
+            findViewById<TextView>(R.id.long_lat_tv)?.visibility = View.GONE
+            findViewById<View>(R.id.hud_satellite_lat_long_tv)?.visibility = View.GONE
+            findViewById<View>(R.id.compass_telemetry_block)?.visibility = View.GONE
+        } else {
+            findViewById<TextView>(R.id.long_lat_tv)?.visibility = View.VISIBLE
+            findViewById<View>(R.id.hud_satellite_lat_long_tv)?.visibility = View.VISIBLE
+            findViewById<View>(R.id.compass_telemetry_block)?.visibility = View.VISIBLE
+        }
+
+        if (customTagline.isNotBlank()) {
+            findViewById<TextView>(R.id.top_script_tagline)?.text = if (customTagline == "Simatrix GPS Camera") "Location Tells the Story" else customTagline
+            (findViewById<ViewGroup>(R.id.top_geotag_badge_left)?.getChildAt(1) as? TextView)?.text = customTagline
+            (findViewById<ViewGroup>(R.id.top_geotag_badge_right)?.getChildAt(1) as? TextView)?.text = customTagline
+        }
+
+        if (showToast) {
+            Toast.makeText(this, "Selected: ${template.title}", Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun saveTimerState(timerState: String, iconResId: Int) {
@@ -1535,12 +2172,288 @@ class MainActivity : AppCompatActivity(), FoldersActivity.FolderClickListener {
         }
     }
 
-    private fun restoreTimerState() {
+        private fun setupQuickOptionsAndRatioPanel() {
+        val toggleOptions = View.OnClickListener {
+            toggleQuickOptionsCard()
+        }
+        btnQuickOptions.setOnClickListener(toggleOptions)
+        optionsIcon.setOnClickListener(toggleOptions)
+
+        // Row 1: Aspect Ratio Tabs
+        findViewById<View>(R.id.tab_ratio_1_1)?.setOnClickListener {
+            applyAspectRatio(AspectRatioMode.RATIO_1_1)
+        }
+        findViewById<View>(R.id.tab_ratio_4_3)?.setOnClickListener {
+            applyAspectRatio(AspectRatioMode.RATIO_4_3)
+        }
+        findViewById<View>(R.id.tab_ratio_16_9)?.setOnClickListener {
+            applyAspectRatio(AspectRatioMode.RATIO_16_9)
+        }
+        findViewById<View>(R.id.tab_ratio_full)?.setOnClickListener {
+            applyAspectRatio(AspectRatioMode.RATIO_FULL)
+        }
+
+        // Row 2: Timer Tabs
+        findViewById<View>(R.id.tab_timer_off)?.setOnClickListener {
+            applyTimerMode(CameraTimerMode.OFF)
+        }
+        findViewById<View>(R.id.tab_timer_3s)?.setOnClickListener {
+            applyTimerMode(CameraTimerMode.TIMER_3S)
+        }
+        findViewById<View>(R.id.tab_timer_5s)?.setOnClickListener {
+            applyTimerMode(CameraTimerMode.TIMER_5S)
+        }
+        findViewById<View>(R.id.tab_timer_10s)?.setOnClickListener {
+            applyTimerMode(CameraTimerMode.TIMER_10S)
+        }
+    }
+
+    private fun toggleQuickOptionsCard() {
+        if (!isOptionsIconSelected) {
+            btnQuickOptions.setBackgroundResource(R.drawable.bg_square_glass_active)
+            cardView.visibility = View.VISIBLE
+            cardView.alpha = 0f
+            cardView.translationY = -20f
+            cardView.animate()
+                .alpha(1f)
+                .translationY(0f)
+                .setDuration(200)
+                .setInterpolator(DecelerateInterpolator())
+                .start()
+            optionsIcon.animate().rotation(180f).setDuration(200).start()
+            isOptionsIconSelected = true
+        } else {
+            closeQuickOptionsCard()
+        }
+    }
+
+    private fun closeQuickOptionsCard() {
+        if (isOptionsIconSelected) {
+            btnQuickOptions.setBackgroundResource(R.drawable.bg_square_glass)
+            cardView.animate()
+                .alpha(0f)
+                .translationY(-20f)
+                .setDuration(150)
+                .withEndAction {
+                    cardView.visibility = View.INVISIBLE
+                }
+                .start()
+            optionsIcon.animate().rotation(0f).setDuration(200).start()
+            isOptionsIconSelected = false
+        }
+    }
+
+    private fun applyAspectRatio(mode: AspectRatioMode, restartCamera: Boolean = true) {
+        selectedAspectRatio = mode
+        val cameraSettings = getSharedPreferences("CameraSettings", Context.MODE_PRIVATE)
+        cameraSettings.edit().putString("camera_aspect_ratio", mode.label).apply()
+
+        topRatioTv.text = mode.label
+        updateRatioTabsUI(mode)
+
+        val root = findViewById<ConstraintLayout>(R.id.root_layout_activity_main) ?: return
+        TransitionManager.beginDelayedTransition(root)
+        val cs = ConstraintSet()
+        cs.clone(root)
+
+        when (mode) {
+            AspectRatioMode.RATIO_1_1 -> {
+                cs.clear(R.id.previewView, ConstraintSet.TOP)
+                cs.clear(R.id.previewView, ConstraintSet.BOTTOM)
+                cs.connect(R.id.previewView, ConstraintSet.TOP, ConstraintSet.PARENT_ID, ConstraintSet.TOP)
+                cs.connect(R.id.previewView, ConstraintSet.BOTTOM, ConstraintSet.PARENT_ID, ConstraintSet.BOTTOM)
+                cs.connect(R.id.previewView, ConstraintSet.START, ConstraintSet.PARENT_ID, ConstraintSet.START)
+                cs.connect(R.id.previewView, ConstraintSet.END, ConstraintSet.PARENT_ID, ConstraintSet.END)
+                cs.setDimensionRatio(R.id.previewView, "1:1")
+                cs.constrainWidth(R.id.previewView, ConstraintSet.MATCH_CONSTRAINT)
+                cs.constrainHeight(R.id.previewView, ConstraintSet.MATCH_CONSTRAINT)
+                anchorHudToPreview(cs, anchorToPreview = true)
+            }
+            AspectRatioMode.RATIO_4_3 -> {
+                cs.clear(R.id.previewView, ConstraintSet.TOP)
+                cs.clear(R.id.previewView, ConstraintSet.BOTTOM)
+                cs.connect(R.id.previewView, ConstraintSet.TOP, ConstraintSet.PARENT_ID, ConstraintSet.TOP)
+                cs.connect(R.id.previewView, ConstraintSet.BOTTOM, ConstraintSet.PARENT_ID, ConstraintSet.BOTTOM)
+                cs.connect(R.id.previewView, ConstraintSet.START, ConstraintSet.PARENT_ID, ConstraintSet.START)
+                cs.connect(R.id.previewView, ConstraintSet.END, ConstraintSet.PARENT_ID, ConstraintSet.END)
+                cs.setDimensionRatio(R.id.previewView, "3:4")
+                cs.constrainWidth(R.id.previewView, ConstraintSet.MATCH_CONSTRAINT)
+                cs.constrainHeight(R.id.previewView, ConstraintSet.MATCH_CONSTRAINT)
+                anchorHudToPreview(cs, anchorToPreview = true)
+            }
+            AspectRatioMode.RATIO_16_9 -> {
+                cs.clear(R.id.previewView, ConstraintSet.TOP)
+                cs.clear(R.id.previewView, ConstraintSet.BOTTOM)
+                cs.connect(R.id.previewView, ConstraintSet.TOP, ConstraintSet.PARENT_ID, ConstraintSet.TOP)
+                cs.connect(R.id.previewView, ConstraintSet.BOTTOM, ConstraintSet.PARENT_ID, ConstraintSet.BOTTOM)
+                cs.connect(R.id.previewView, ConstraintSet.START, ConstraintSet.PARENT_ID, ConstraintSet.START)
+                cs.connect(R.id.previewView, ConstraintSet.END, ConstraintSet.PARENT_ID, ConstraintSet.END)
+                cs.setDimensionRatio(R.id.previewView, "9:16")
+                cs.constrainWidth(R.id.previewView, ConstraintSet.MATCH_CONSTRAINT)
+                cs.constrainHeight(R.id.previewView, ConstraintSet.MATCH_CONSTRAINT)
+                anchorHudToPreview(cs, anchorToPreview = false)
+            }
+            AspectRatioMode.RATIO_FULL -> {
+                cs.clear(R.id.previewView, ConstraintSet.TOP)
+                cs.clear(R.id.previewView, ConstraintSet.BOTTOM)
+                cs.connect(R.id.previewView, ConstraintSet.TOP, ConstraintSet.PARENT_ID, ConstraintSet.TOP)
+                cs.connect(R.id.previewView, ConstraintSet.BOTTOM, ConstraintSet.PARENT_ID, ConstraintSet.BOTTOM)
+                cs.connect(R.id.previewView, ConstraintSet.START, ConstraintSet.PARENT_ID, ConstraintSet.START)
+                cs.connect(R.id.previewView, ConstraintSet.END, ConstraintSet.PARENT_ID, ConstraintSet.END)
+                cs.setDimensionRatio(R.id.previewView, null)
+                cs.constrainWidth(R.id.previewView, ConstraintSet.MATCH_CONSTRAINT)
+                cs.constrainHeight(R.id.previewView, ConstraintSet.MATCH_CONSTRAINT)
+                anchorHudToPreview(cs, anchorToPreview = false)
+            }
+        }
+        cs.applyTo(root)
+
+        if (restartCamera && ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+            startCamera()
+        }
+    }
+
+    private fun anchorHudToPreview(cs: ConstraintSet, anchorToPreview: Boolean) {
+        val hudIds = intArrayOf(
+            R.id.map_card_view,
+            R.id.location_details_card_view,
+            R.id.minimal_info_container,
+            R.id.vertical_info_container,
+            R.id.satellite_details_card_view,
+            R.id.compass_overlay_container
+        )
+        val density = resources.displayMetrics.density
+        val marginPx = if (anchorToPreview) (8 * density).toInt() else (12 * density).toInt()
+        val targetAnchorId = if (anchorToPreview) R.id.previewView else R.id.card_view_main_activity
+        val targetAnchorSide = if (anchorToPreview) ConstraintSet.BOTTOM else ConstraintSet.TOP
+
+        for (id in hudIds) {
+            if (findViewById<View>(id) != null) {
+                cs.clear(id, ConstraintSet.BOTTOM)
+                cs.connect(id, ConstraintSet.BOTTOM, targetAnchorId, targetAnchorSide, marginPx)
+            }
+        }
+    }
+
+    private fun updateRatioTabsUI(mode: AspectRatioMode) {
+        val tab1 = findViewById<View>(R.id.tab_ratio_1_1) ?: return
+        val tab4 = findViewById<View>(R.id.tab_ratio_4_3) ?: return
+        val tab16 = findViewById<View>(R.id.tab_ratio_16_9) ?: return
+        val tabFull = findViewById<View>(R.id.tab_ratio_full) ?: return
+
+        val tv1 = findViewById<TextView>(R.id.tv_ratio_1_1)
+        val ic1 = findViewById<ImageView>(R.id.ic_ratio_1_1)
+        val tv4 = findViewById<TextView>(R.id.tv_ratio_4_3)
+        val tv16 = findViewById<TextView>(R.id.tv_ratio_16_9)
+        val tvFull = findViewById<TextView>(R.id.tv_ratio_full)
+        val selectedBg = R.drawable.bg_segmented_selected_square
+        val unselectedBg = android.R.color.transparent
+        val colorSelected = Color.BLACK
+        val colorUnselected = Color.WHITE
+
+        val is1 = mode == AspectRatioMode.RATIO_1_1
+        tab1.setBackgroundResource(if (is1) selectedBg else unselectedBg)
+        tv1?.setTextColor(if (is1) colorSelected else colorUnselected)
+        ic1?.setColorFilter(if (is1) colorSelected else colorUnselected)
+
+        val is4 = mode == AspectRatioMode.RATIO_4_3
+        tab4.setBackgroundResource(if (is4) selectedBg else unselectedBg)
+        tv4?.setTextColor(if (is4) colorSelected else colorUnselected)
+
+        val is16 = mode == AspectRatioMode.RATIO_16_9
+        tab16.setBackgroundResource(if (is16) selectedBg else unselectedBg)
+        tv16?.setTextColor(if (is16) colorSelected else colorUnselected)
+
+        val isFull = mode == AspectRatioMode.RATIO_FULL
+        tabFull.setBackgroundResource(if (isFull) selectedBg else unselectedBg)
+        tvFull?.setTextColor(if (isFull) colorSelected else colorUnselected)
+    }
+
+    private fun applyTimerMode(mode: CameraTimerMode) {
+        selectedTimer = mode
+        val cameraSettings = getSharedPreferences("CameraSettings", Context.MODE_PRIVATE)
+        cameraSettings.edit().putString("camera_timer_mode", mode.label).apply()
+
+        // Sync legacy timer_state
+        val legacyText = when (mode) {
+            CameraTimerMode.TIMER_3S -> "Timer 3sec"
+            CameraTimerMode.TIMER_5S -> "Timer 5sec"
+            CameraTimerMode.TIMER_10S -> "Timer 10sec"
+            CameraTimerMode.OFF -> "Timer Off"
+        }
         val sharedPref = getSharedPreferences("timer_state", Context.MODE_PRIVATE)
-        val timerState = sharedPref.getString("timer_state_key", "Timer Off")
-        val iconResId = sharedPref.getInt("timer_icon_key", R.drawable.timer_off_icon)
-        timerIcon.setImageResource(iconResId)
-        timerTv.text = timerState
+        sharedPref.edit().putString("timer_state_key", legacyText).apply()
+        timerTv.text = legacyText
+
+        updateTimerTabsUI(mode)
+    }
+
+    private fun updateTimerTabsUI(mode: CameraTimerMode) {
+        val tabOff = findViewById<View>(R.id.tab_timer_off) ?: return
+        val tab3s = findViewById<View>(R.id.tab_timer_3s) ?: return
+        val tab5s = findViewById<View>(R.id.tab_timer_5s) ?: return
+        val tab10s = findViewById<View>(R.id.tab_timer_10s) ?: return
+
+        val tvOff = findViewById<TextView>(R.id.tv_timer_off)
+        val icOff = findViewById<ImageView>(R.id.ic_timer_off)
+        val tv3s = findViewById<TextView>(R.id.tv_timer_3s)
+        val tv5s = findViewById<TextView>(R.id.tv_timer_5s)
+        val tv10s = findViewById<TextView>(R.id.tv_timer_10s)
+
+        val selectedBg = R.drawable.bg_segmented_selected
+        val unselectedBg = android.R.color.transparent
+        val colorSelected = Color.BLACK
+        val colorUnselected = Color.WHITE
+
+        val isOff = mode == CameraTimerMode.OFF
+        tabOff.setBackgroundResource(if (isOff) selectedBg else unselectedBg)
+        tvOff?.setTextColor(if (isOff) colorSelected else colorUnselected)
+        icOff?.setColorFilter(if (isOff) colorSelected else colorUnselected)
+
+        val is3s = mode == CameraTimerMode.TIMER_3S
+        tab3s.setBackgroundResource(if (is3s) selectedBg else unselectedBg)
+        tv3s?.setTextColor(if (is3s) colorSelected else colorUnselected)
+
+        val is5s = mode == CameraTimerMode.TIMER_5S
+        tab5s.setBackgroundResource(if (is5s) selectedBg else unselectedBg)
+        tv5s?.setTextColor(if (is5s) colorSelected else colorUnselected)
+
+        val is10s = mode == CameraTimerMode.TIMER_10S
+        tab10s.setBackgroundResource(if (is10s) selectedBg else unselectedBg)
+        tv10s?.setTextColor(if (is10s) colorSelected else colorUnselected)
+    }
+
+    private fun restoreAspectRatioState() {
+        val cameraSettings = getSharedPreferences("CameraSettings", Context.MODE_PRIVATE)
+        val ratioLabel = cameraSettings.getString("camera_aspect_ratio", "16:9")
+        val ratioMode = AspectRatioMode.fromLabel(ratioLabel)
+        applyAspectRatio(ratioMode, restartCamera = false)
+    }
+
+    private fun restoreTimerState() {
+        val cameraSettings = getSharedPreferences("CameraSettings", Context.MODE_PRIVATE)
+        val timerLabel = cameraSettings.getString("camera_timer_mode", "Off")
+        val timerMode = CameraTimerMode.fromLabel(timerLabel)
+        applyTimerMode(timerMode)
+    }
+
+    private fun runTenSecondCountdown(onComplete: () -> Unit) {
+        countdownTextView.visibility = View.VISIBLE
+        activeCountDownTimer?.cancel()
+        activeCountDownTimer = object : CountDownTimer(10000, 1000) {
+            override fun onTick(millisUntilFinished: Long) {
+                val sec = ((millisUntilFinished / 1000) + 1).toInt()
+                countdownTextView.text = sec.toString()
+                countdownTextView.scaleX = 1.3f
+                countdownTextView.scaleY = 1.3f
+                countdownTextView.animate().scaleX(1.0f).scaleY(1.0f).setDuration(250).start()
+            }
+
+            override fun onFinish() {
+                countdownTextView.visibility = View.GONE
+                onComplete()
+            }
+        }.start()
     }
 
     private fun playCameraSound() {
